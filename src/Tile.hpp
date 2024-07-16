@@ -11,7 +11,6 @@ namespace Minesweeper {
         bool m_isChecked : 1 {false};
         bool m_isFlagged : 1 {false};
         bool m_isMine : 1 {false};
-        char m_tileRepr {' '};
 
     public:
         Tile(std::uint8_t row, std::uint8_t column);
@@ -21,7 +20,7 @@ namespace Minesweeper {
         [[nodiscard]] bool isChecked() const;
         [[nodiscard]] bool isFlagged() const;
         [[nodiscard]] bool isMine() const;
-        void setSurroundingMines(std::uint8_t mineCount);
+        void incrementSurroundingMines();
         void becomeChecked();
         void becomeMine();
         void toggleFlag();

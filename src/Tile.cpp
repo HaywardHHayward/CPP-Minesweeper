@@ -11,11 +11,11 @@ namespace Minesweeper {
     bool Tile::isFlagged() const { return m_isFlagged; }
     bool Tile::isMine() const { return m_isMine; }
 
-    void Tile::setSurroundingMines(const std::uint8_t mineCount) {
-        if (mineCount >= 9) {
-            throw(std::invalid_argument("m_surrouindingMines cannot be set to more than 8."));
+    void Tile::incrementSurroundingMines() {
+        if (m_surroundingMines + 1 >= 9) [[unlikely]] {
+            throw(std::invalid_argument("m_surrouindingMines cannot be incremented to more than 8."));
         }
-        m_surroundingMines = mineCount;
+        m_surroundingMines++;
     }
 
     void Tile::becomeChecked() {
