@@ -2,14 +2,14 @@
 #define BOARD_HPP
 
 #include <cstdint>
-#include <memory>
 #include <unordered_set>
 #include <vector>
 
-#include "Tile.hpp"
 
 namespace Minesweeper {
-    class Board {
+    class Tile;
+
+    class Board final {
         std::unordered_set<Tile*> m_minedTiles;
         std::unordered_set<Tile*> m_flaggedTiles;
         std::vector<Tile> m_board;
@@ -18,7 +18,7 @@ namespace Minesweeper {
         const std::uint8_t m_columnAmount;
         bool m_firstCheck{true};
 
-        void getSurroundingTiles(const std::shared_ptr<std::vector<Tile*>>& vec,
+        void getSurroundingTiles(std::vector<Tile*>& vec,
                                  std::uint8_t row, std::uint8_t column);
         void generateMines(std::uint8_t row, std::uint8_t column);
 

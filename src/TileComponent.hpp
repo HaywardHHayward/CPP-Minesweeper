@@ -3,9 +3,10 @@
 
 #include <ftxui/component/component.hpp>
 
-#include "Tile.hpp"
 
 namespace Minesweeper {
+    class Tile;
+
     class TileComponent final : public ftxui::ComponentBase {
         Tile& m_tile;
 

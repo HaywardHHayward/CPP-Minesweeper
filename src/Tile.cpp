@@ -1,6 +1,5 @@
 #include "Tile.hpp"
 
-#include <stdexcept>
 
 namespace Minesweeper {
     Tile::Tile(const std::uint8_t row, const std::uint8_t column): m_row(row), m_column(column) { }
@@ -12,21 +11,30 @@ namespace Minesweeper {
     bool Tile::isMine() const { return m_isMine; }
 
     void Tile::incrementSurroundingMines() {
-        if (m_surroundingMines + 1 >= 9) [[unlikely]] {
-            throw(std::invalid_argument("m_surrouindingMines cannot be incremented to more than 8."));
+        if (m_surroundingMines + 1 >= 9) {
+            return;
         }
         m_surroundingMines++;
     }
 
     void Tile::becomeChecked() {
+        if (m_isFlagged) {
+            return;
+        }
         m_isChecked = true;
     }
 
     void Tile::becomeMine() {
+        if (m_isChecked) {
+            return;
+        }
         m_isMine = true;
     }
 
     void Tile::toggleFlag() {
+        if (m_isChecked) {
+            return;
+        }
         m_isFlagged = !m_isFlagged;
     }
 } // Minesweeper

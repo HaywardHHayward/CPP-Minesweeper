@@ -1,6 +1,14 @@
 #include "TileComponent.hpp"
 
-#include <cassert>
+#include "Tile.hpp"
+
+#if defined(_MSC_VER)
+#define UNREACHABLE() __assume(0)
+#elif defined(__GNUC__)
+#define UNREACHABLE() __builtin_unreachable()
+#else
+#define UNREACHABLE() 
+#endif
 
 namespace Minesweeper {
     TileComponent::TileComponent(Tile& tile): m_tile(tile) { }
@@ -47,9 +55,8 @@ namespace Minesweeper {
                 case 8:
                     tileRepr = ftxui::text("8") | color(ftxui::Color::GrayLight);
                     break;
-                [[unlikely]]
-                default: // this should never be reached
-                    assert(false);
+                default: // this should never be reached since it'll be a violation of Tile's surroundingMines invariant
+                    UNREACHABLE();
             }
         }
         tileRepr |= bgcolor(ftxui::Color::GrayDark);

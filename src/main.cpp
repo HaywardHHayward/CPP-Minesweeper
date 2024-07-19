@@ -1,5 +1,5 @@
 #include <iostream>
-#include <ftxui/component/component.hpp>
+
 #include "Board.hpp"
 #include "Tile.hpp"
 

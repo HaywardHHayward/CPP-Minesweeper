@@ -4,7 +4,7 @@
 #include <cstdint>
 
 namespace Minesweeper {
-    class Tile {
+    class Tile final {
         const std::uint8_t m_row;
         const std::uint8_t m_column;
         std::uint8_t m_surroundingMines : 4 {0};

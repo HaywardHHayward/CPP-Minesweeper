@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.29)
-project(CPP_Minesweeper)
+project(Minesweeper)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -11,12 +11,12 @@ FetchContent_Declare(ftxui
 )
 
 FetchContent_GetProperties(ftxui)
-if(NOT ftxui_POPULATED)
+if (NOT ftxui_POPULATED)
     FetchContent_Populate(ftxui)
     add_subdirectory(${ftxui_SOURCE_DIR} ${ftxui_BINARY_DIR} EXCLUDE_FROM_ALL)
-endif()
+endif ()
 
-add_executable(CPP_Minesweeper src/main.cpp
+add_executable(Minesweeper src/main.cpp
         src/Tile.cpp
         src/Tile.hpp
         src/Board.cpp
@@ -24,7 +24,7 @@ add_executable(CPP_Minesweeper src/main.cpp
         src/TileComponent.cpp
         src/TileComponent.hpp)
 
-target_link_libraries(CPP_Minesweeper
+target_link_libraries(Minesweeper
         PRIVATE ftxui::screen
         PRIVATE ftxui::dom
         PRIVATE ftxui::component # Not needed for this example.
