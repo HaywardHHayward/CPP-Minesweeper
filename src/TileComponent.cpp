@@ -11,7 +11,7 @@
 #endif
 
 namespace Minesweeper {
-    TileComponent::TileComponent(Tile& tile): m_tile(tile) { }
+    TileComponent::TileComponent(Tile& tile): ComponentBase(), m_tile(tile) { }
 
     ftxui::Element TileComponent::Render() {
         ftxui::Element tileRepr;

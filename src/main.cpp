@@ -1,23 +1,22 @@
 #include <iostream>
+#include <ftxui/dom/elements.hpp>
+#include <ftxui/screen/screen.hpp>
 
 #include "Board.hpp"
+#include "BoardComponent.hpp"
 #include "Tile.hpp"
+#include "TileComponent.hpp"
 
 int main() {
     Minesweeper::Board board{5, 5, 5};
     board.checkTile(0, 0);
-    for (int i = 0; i < 5; i++) {
-        for (int j = 0; j < 5; j++) {
-            std::string tileRepr;
-            Minesweeper::Tile& tile = board.at(i, j);
-            if (tile.isMine()) {
-                tileRepr = "M";
-            } else {
-                tileRepr = std::to_string(tile.getSurroundingMines());
-            }
-            std::cout << tileRepr << " ";
-        }
-        std::cout << std::endl;
-    }
+    auto document = Minesweeper::BoardComponent(board).Render();
+    auto screen = ftxui::Screen::Create(ftxui::Dimension::Fit(document));
+    Render(screen, document);
+    screen.Print();
+    std::cout << std::endl;
+    auto document2 = Minesweeper::BoardComponent(board).Render();
+    Render(screen, document2);
+    screen.Print();
     return 0;
 }

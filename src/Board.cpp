@@ -80,7 +80,8 @@ namespace Minesweeper {
     }
 
     Board::Board(const std::uint8_t rowAmount, const std::uint8_t columnAmount,
-                 const std::uint16_t mineCount): m_minedTiles(mineCount), m_flaggedTiles(rowAmount * columnAmount),
+                 const std::uint16_t mineCount): m_minedTiles(mineCount),
+                                                 m_uncheckedTiles(rowAmount * columnAmount),
                                                  m_mineCount(mineCount),
                                                  m_rowAmount(rowAmount),
                                                  m_columnAmount(columnAmount) {
@@ -92,9 +93,18 @@ namespace Minesweeper {
         m_board.reserve(rowAmount * columnAmount);
         for (int row = 0; row < rowAmount; row++) {
             for (int col = 0; col < columnAmount; col++) {
-                m_board.emplace_back(row, col);
+                Tile* newTile = &m_board.emplace_back(row, col);
+                m_uncheckedTiles.insert(newTile);
             }
         }
+    }
+
+    std::uint8_t Board::getRowAmount() const {
+        return m_rowAmount;
+    }
+
+    std::uint8_t Board::getColumnAmount() const {
+        return m_columnAmount;
     }
 
     Tile& Board::at(const std::uint8_t row, const std::uint8_t column) {
@@ -122,6 +132,7 @@ namespace Minesweeper {
             return;
         }
         tile.becomeChecked();
+        m_uncheckedTiles.erase(&tile);
         if (tile.getSurroundingMines() == 0) {
             std::vector<Tile*> surroundingTiles;
             getSurroundingTiles(surroundingTiles, row, column);
@@ -137,5 +148,9 @@ namespace Minesweeper {
             return;
         }
         tile.toggleFlag();
+    }
+
+    bool Board::foundAllMines() const {
+        return m_uncheckedTiles == m_minedTiles;
     }
 } // Minesweeper

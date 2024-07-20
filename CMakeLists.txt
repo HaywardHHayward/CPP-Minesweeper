@@ -22,7 +22,9 @@ add_executable(Minesweeper src/main.cpp
         src/Board.cpp
         src/Board.hpp
         src/TileComponent.cpp
-        src/TileComponent.hpp)
+        src/TileComponent.hpp
+        src/BoardComponent.cpp
+        src/BoardComponent.hpp)
 
 target_link_libraries(Minesweeper
         PRIVATE ftxui::screen
