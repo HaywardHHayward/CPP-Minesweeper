@@ -31,6 +31,18 @@ namespace Minesweeper {
         void toggleFlag(std::uint8_t row, std::uint8_t column);
         [[nodiscard]] bool foundAllMines() const;
     };
+
+    inline std::uint8_t Board::getRowAmount() const {
+        return m_rowAmount;
+    }
+
+    inline std::uint8_t Board::getColumnAmount() const {
+        return m_columnAmount;
+    }
+
+    inline bool Board::foundAllMines() const {
+        return m_uncheckedTiles == m_minedTiles;
+    }
 } // Minesweeper
 
 #endif //BOARD_HPP

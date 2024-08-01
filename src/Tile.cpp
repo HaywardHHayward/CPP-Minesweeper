@@ -3,12 +3,6 @@
 
 namespace Minesweeper {
     Tile::Tile(const std::uint8_t row, const std::uint8_t column): m_row(row), m_column(column) { }
-    std::uint8_t Tile::getRow() const { return m_row; }
-    std::uint8_t Tile::getColumn() const { return m_column; }
-    std::uint8_t Tile::getSurroundingMines() const { return m_surroundingMines; }
-    bool Tile::isChecked() const { return m_isChecked; }
-    bool Tile::isFlagged() const { return m_isFlagged; }
-    bool Tile::isMine() const { return m_isMine; }
 
     void Tile::incrementSurroundingMines() {
         if (m_surroundingMines + 1 >= 9) {

@@ -25,6 +25,30 @@ namespace Minesweeper {
         void becomeMine();
         void toggleFlag();
     };
+
+    inline std::uint8_t Tile::getRow() const {
+        return m_row;
+    }
+
+    inline std::uint8_t Tile::getColumn() const {
+        return m_column;
+    }
+
+    inline std::uint8_t Tile::getSurroundingMines() const {
+        return m_surroundingMines;
+    }
+
+    inline bool Tile::isChecked() const {
+        return m_isChecked;
+    }
+
+    inline bool Tile::isFlagged() const {
+        return m_isFlagged;
+    }
+
+    inline bool Tile::isMine() const {
+        return m_isMine;
+    }
 } // Minesweeper
 
 #endif //TILE_HPP

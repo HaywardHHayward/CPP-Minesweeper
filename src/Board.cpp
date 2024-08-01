@@ -99,14 +99,6 @@ namespace Minesweeper {
         }
     }
 
-    std::uint8_t Board::getRowAmount() const {
-        return m_rowAmount;
-    }
-
-    std::uint8_t Board::getColumnAmount() const {
-        return m_columnAmount;
-    }
-
     Tile& Board::at(const std::uint8_t row, const std::uint8_t column) {
         if (column >= m_columnAmount) [[unlikely]] {
             throw std::out_of_range(std::format(
@@ -148,9 +140,5 @@ namespace Minesweeper {
             return;
         }
         tile.toggleFlag();
-    }
-
-    bool Board::foundAllMines() const {
-        return m_uncheckedTiles == m_minedTiles;
     }
 } // Minesweeper

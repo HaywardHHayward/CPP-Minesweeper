@@ -19,6 +19,14 @@ namespace Minesweeper {
         [[nodiscard]] bool Focusable() const override;
     };
 
+    inline std::pair<uint8_t, uint8_t> TileComponentBase::getCoordinates() const {
+        return m_coords;
+    }
+
+    inline std::shared_ptr<TileComponentBase> TileComponentBase::Create(Tile& tile) {
+        return std::make_shared<TileComponentBase>(tile);
+    }
+
     using TileComponent = std::shared_ptr<TileComponentBase>;
 } // Minesweeper
 

@@ -11,16 +11,9 @@
 #endif
 
 namespace Minesweeper {
-    TileComponentBase::TileComponentBase(Tile& tile): ComponentBase(), m_tile(tile), m_coords{std::make_pair(tile.getRow(), tile.getColumn())},
-                                              hovered{false} { }
-
-    std::shared_ptr<TileComponentBase> TileComponentBase::Create(Tile& tile) {
-        return std::make_shared<TileComponentBase>(tile);
-    }
-
-    std::pair<uint8_t, uint8_t> TileComponentBase::getCoordinates() const {
-        return m_coords;
-    }
+    TileComponentBase::TileComponentBase(Tile& tile): ComponentBase(), m_tile(tile),
+                                                      m_coords{std::make_pair(tile.getRow(), tile.getColumn())},
+                                                      hovered{false} { }
 
     ftxui::Element TileComponentBase::Render() {
         ftxui::Element tileRepr;

@@ -10,7 +10,7 @@
 int main() {
     Minesweeper::Board board{5, 5, 5};
     std::shared_ptr<Minesweeper::BoardComponentBase> boardComponent = Minesweeper::BoardComponentBase::Create(board);
-    auto screen = ftxui::ScreenInteractive::Fullscreen();
+    ftxui::ScreenInteractive screen = ftxui::ScreenInteractive::Fullscreen();
     screen.Loop(Hoverable(boardComponent, &boardComponent->hovered) | ftxui::center | ftxui::flex);
     std::cin.peek();
     return 0;

@@ -3,19 +3,13 @@
 #include <algorithm>
 #include <ftxui/component/component.hpp>
 
-#include "Board.hpp"
 #include "Tile.hpp"
 #include "TileComponentBase.hpp"
 #include "ftxui/dom/table.hpp"
 
 namespace Minesweeper {
-    std::shared_ptr<BoardComponentBase> BoardComponentBase::Create(Board& board) {
-        return std::make_shared<BoardComponentBase>(board);
-    }
-
     BoardComponentBase::BoardComponentBase(Board& board): ComponentBase(), m_board{board}, hovered{false} {
         for (int row = 0; row < board.getRowAmount(); ++row) {
-            std::vector<ftxui::Element> rowOfElements;
             for (int col = 0; col < board.getColumnAmount(); ++col) {
                 TileComponent child = TileComponentBase::Create(board.at(row, col));
                 Add(Hoverable(child, &child->hovered));
@@ -47,13 +41,13 @@ namespace Minesweeper {
             if (!hovered) {
                 return true;
             }
-            std::optional<std::pair<std::uint8_t, std::uint8_t> > possibleCoordinates;
             std::ranges::for_each(std::as_const(children_),
                                   [&event](const ftxui::Component& child) { child->OnEvent(event); });
+            std::optional<std::pair<std::uint8_t, std::uint8_t> > possibleCoordinates;
             if (const auto it = std::ranges::find_if(children_,
                                                      [](const ftxui::Component& child) {
                                                          return std::static_pointer_cast<
-                                                                     TileComponentBase>(child->ChildAt(0))->
+                                                                     TileComponentBase>(child->ActiveChild())->
                                                                  hovered;
                                                      }); it != children_.end()) {
                 possibleCoordinates = std::static_pointer_cast<TileComponentBase>((*it)->ChildAt(0))->getCoordinates();
@@ -61,12 +55,21 @@ namespace Minesweeper {
             if (!possibleCoordinates.has_value()) {
                 return true;
             }
-            auto [fst, snd] = possibleCoordinates.value();
-            if (button == ftxui::Mouse::Button::Left && motion == ftxui::Mouse::Motion::Released) {
-                m_board.checkTile(fst, snd);
-            }
-            if (button == ftxui::Mouse::Button::Right && motion == ftxui::Mouse::Motion::Released) {
-                m_board.toggleFlag(fst, snd);
+            auto [row, column] = possibleCoordinates.value();
+            if (motion == ftxui::Mouse::Motion::Released) {
+                switch (button) {
+                    case ftxui::Mouse::Left:
+                        m_board.checkTile(row, column);
+                        break;
+                    case ftxui::Mouse::Middle:
+                        //TODO
+                        break;
+                    case ftxui::Mouse::Right:
+                        m_board.toggleFlag(row, column);
+                        break;
+                    default:
+                        break;
+                }
             }
         }
         return true;
@@ -77,14 +80,10 @@ namespace Minesweeper {
     }
 
     bool BoardComponentBase::Focusable() const {
-        return ComponentBase::Focusable();
+        return true;
     }
 
     void BoardComponentBase::SetActiveChild(ComponentBase* child) {
         ComponentBase::SetActiveChild(child);
-    }
-
-    ftxui::Component& BoardComponentBase::childAtCoords(const size_t r, const size_t c) {
-        return ChildAt(r * m_board.getColumnAmount() + c);
     }
 } // Minesweeper
