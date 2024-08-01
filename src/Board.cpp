@@ -133,7 +133,7 @@ namespace Minesweeper {
         }
         tile.becomeChecked();
         m_uncheckedTiles.erase(&tile);
-        if (tile.getSurroundingMines() == 0) {
+        if (tile.getSurroundingMines() == 0 && !tile.isMine()) {
             std::vector<Tile*> surroundingTiles;
             getSurroundingTiles(surroundingTiles, row, column);
             for (const Tile* sTile: surroundingTiles) {

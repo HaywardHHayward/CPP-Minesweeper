@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.29)
-project(Minesweeper)
+project(MinesweeperC++)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -18,16 +18,12 @@ endif ()
 
 add_executable(Minesweeper src/main.cpp
         src/Tile.cpp
-        src/Tile.hpp
         src/Board.cpp
-        src/Board.hpp
-        src/TileComponent.cpp
-        src/TileComponent.hpp
-        src/BoardComponent.cpp
-        src/BoardComponent.hpp)
+        src/TileComponentBase.cpp
+        src/BoardComponentBase.cpp)
 
 target_link_libraries(Minesweeper
         PRIVATE ftxui::screen
         PRIVATE ftxui::dom
-        PRIVATE ftxui::component # Not needed for this example.
+        PRIVATE ftxui::component
 )

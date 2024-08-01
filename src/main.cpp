@@ -1,22 +1,17 @@
 #include <iostream>
+#include <ftxui/component/screen_interactive.hpp>
 #include <ftxui/dom/elements.hpp>
-#include <ftxui/screen/screen.hpp>
 
 #include "Board.hpp"
-#include "BoardComponent.hpp"
+#include "BoardComponentBase.hpp"
 #include "Tile.hpp"
-#include "TileComponent.hpp"
+#include "TileComponentBase.hpp"
 
 int main() {
     Minesweeper::Board board{5, 5, 5};
-    board.checkTile(0, 0);
-    auto document = Minesweeper::BoardComponent(board).Render();
-    auto screen = ftxui::Screen::Create(ftxui::Dimension::Fit(document));
-    Render(screen, document);
-    screen.Print();
-    std::cout << std::endl;
-    auto document2 = Minesweeper::BoardComponent(board).Render();
-    Render(screen, document2);
-    screen.Print();
+    std::shared_ptr<Minesweeper::BoardComponentBase> boardComponent = Minesweeper::BoardComponentBase::Create(board);
+    auto screen = ftxui::ScreenInteractive::Fullscreen();
+    screen.Loop(Hoverable(boardComponent, &boardComponent->hovered) | ftxui::center | ftxui::flex);
+    std::cin.peek();
     return 0;
 }
