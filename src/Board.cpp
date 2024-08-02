@@ -1,5 +1,6 @@
 #include "Board.hpp"
 
+#include <algorithm>
 #include <format>
 #include <random>
 #include <stdexcept>
@@ -7,6 +8,26 @@
 #include "Tile.hpp"
 
 namespace Minesweeper {
+    Board::Board(const std::uint8_t rowAmount, const std::uint8_t columnAmount,
+                 const std::uint16_t mineCount): m_minedTiles(mineCount),
+                                                 m_uncheckedTiles(rowAmount * columnAmount),
+                                                 m_mineCount(mineCount),
+                                                 m_rowAmount(rowAmount),
+                                                 m_columnAmount(columnAmount) {
+        if (mineCount >= m_rowAmount * m_columnAmount) [[unlikely]] {
+            throw(std::invalid_argument(std::format(
+                "mineCount ({}) cannot be greater than or equal to the board size ({})", mineCount,
+                m_rowAmount * m_columnAmount)));
+        }
+        m_board.reserve(rowAmount * columnAmount);
+        for (int row = 0; row < rowAmount; row++) {
+            for (int col = 0; col < columnAmount; col++) {
+                Tile* newTile = &m_board.emplace_back(row, col);
+                m_uncheckedTiles.insert(newTile);
+            }
+        }
+    }
+
     void Board::getSurroundingTiles(std::vector<Tile*>& vec,
                                     const std::uint8_t row, const std::uint8_t column) {
         for (int r = -1; r <= 1; r++) {
@@ -31,11 +52,11 @@ namespace Minesweeper {
         std::mt19937 gen{seedSeq};
         std::uniform_int_distribution<std::uint8_t> rowRandom(0, m_rowAmount - 1);
         std::uniform_int_distribution<std::uint8_t> columnRandom(0, m_columnAmount - 1);
-        std::vector<Tile*> surroundingTiles{8};
+        std::vector<Tile*> surroundingTiles;
         getSurroundingTiles(surroundingTiles, row, column);
         const bool tooManyMines = m_mineCount >= m_rowAmount * m_columnAmount - surroundingTiles.size();
         const bool notEnoughSpace = m_rowAmount <= 3 && m_columnAmount <= 3;
-        if (tooManyMines || notEnoughSpace) {
+        if (tooManyMines || notEnoughSpace) [[unlikely]] {
             while (m_minedTiles.size() < m_mineCount) {
                 const uint8_t randRow{(rowRandom(gen))};
                 const uint8_t randColumn{(columnRandom(gen))};
@@ -79,26 +100,6 @@ namespace Minesweeper {
         }
     }
 
-    Board::Board(const std::uint8_t rowAmount, const std::uint8_t columnAmount,
-                 const std::uint16_t mineCount): m_minedTiles(mineCount),
-                                                 m_uncheckedTiles(rowAmount * columnAmount),
-                                                 m_mineCount(mineCount),
-                                                 m_rowAmount(rowAmount),
-                                                 m_columnAmount(columnAmount) {
-        if (mineCount >= m_rowAmount * m_columnAmount) [[unlikely]] {
-            throw(std::invalid_argument(std::format(
-                "mineCount ({}) cannot be greater than or equal to the board size ({})", mineCount,
-                m_rowAmount * m_columnAmount)));
-        }
-        m_board.reserve(rowAmount * columnAmount);
-        for (int row = 0; row < rowAmount; row++) {
-            for (int col = 0; col < columnAmount; col++) {
-                Tile* newTile = &m_board.emplace_back(row, col);
-                m_uncheckedTiles.insert(newTile);
-            }
-        }
-    }
-
     Tile& Board::at(const std::uint8_t row, const std::uint8_t column) {
         if (column >= m_columnAmount) [[unlikely]] {
             throw std::out_of_range(std::format(
@@ -134,7 +135,29 @@ namespace Minesweeper {
         }
     }
 
-    void Board::toggleFlag(const std::uint8_t row, const std::uint8_t column) {
+    void Board::clearSafeTiles(const std::uint8_t row, const std::uint8_t column) {
+        const Tile& safeTile{at(row, column)};
+        if (!safeTile.isChecked() || safeTile.getSurroundingMines() == 0) {
+            return;
+        }
+        std::vector<Tile*> uncheckedTiles;
+        getSurroundingTiles(uncheckedTiles, row, column);
+        std::erase_if(uncheckedTiles, [this](const Tile* tile) { return tile->isChecked(); });
+        std::vector<Tile*> trueUncheckedTiles;
+        std::vector<Tile*> flaggedSurroundingTiles;
+        std::partition_copy(uncheckedTiles.begin(), uncheckedTiles.end(), std::back_inserter(flaggedSurroundingTiles),
+                            std::back_inserter(trueUncheckedTiles), [this](const Tile* tile) {
+                                return tile->isFlagged();
+                            });
+        if (flaggedSurroundingTiles.size() == safeTile.getSurroundingMines()) {
+            std::ranges::for_each(trueUncheckedTiles, [this](const Tile* tile) {
+                checkTile(tile->getRow(), tile->getColumn());
+            });
+        }
+    }
+
+
+    void Board::toggleFlag(const std::uint8_t row, const std::uint8_t column) noexcept {
         Tile& tile = at(row, column);
         if (tile.isChecked()) {
             return;

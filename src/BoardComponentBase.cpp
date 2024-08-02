@@ -8,11 +8,11 @@
 #include "ftxui/dom/table.hpp"
 
 namespace Minesweeper {
-    BoardComponentBase::BoardComponentBase(Board& board): ComponentBase(), m_board{board}, hovered{false} {
+    BoardComponentBase::BoardComponentBase(Board& board): ComponentBase(), m_board{board}, m_hovered{false} {
         for (int row = 0; row < board.getRowAmount(); ++row) {
             for (int col = 0; col < board.getColumnAmount(); ++col) {
                 TileComponent child = TileComponentBase::Create(board.at(row, col));
-                Add(Hoverable(child, &child->hovered));
+                Add(Hoverable(child, &child->m_hovered));
             }
         }
     }
@@ -38,17 +38,17 @@ namespace Minesweeper {
     bool BoardComponentBase::OnEvent(ftxui::Event event) {
         if (event.is_mouse()) {
             auto [button, motion, shift, meta, control, x, y] = event.mouse();
-            if (!hovered) {
+            if (!m_hovered) {
                 return true;
             }
             std::ranges::for_each(std::as_const(children_),
                                   [&event](const ftxui::Component& child) { child->OnEvent(event); });
             std::optional<std::pair<std::uint8_t, std::uint8_t> > possibleCoordinates;
-            if (const auto it = std::ranges::find_if(children_,
+            if (const auto it = std::ranges::find_if(std::as_const(children_),
                                                      [](const ftxui::Component& child) {
                                                          return std::static_pointer_cast<
                                                                      TileComponentBase>(child->ActiveChild())->
-                                                                 hovered;
+                                                                 m_hovered;
                                                      }); it != children_.end()) {
                 possibleCoordinates = std::static_pointer_cast<TileComponentBase>((*it)->ChildAt(0))->getCoordinates();
             }
@@ -62,7 +62,7 @@ namespace Minesweeper {
                         m_board.checkTile(row, column);
                         break;
                     case ftxui::Mouse::Middle:
-                        //TODO
+                        m_board.clearSafeTiles(row, column);
                         break;
                     case ftxui::Mouse::Right:
                         m_board.toggleFlag(row, column);
@@ -79,7 +79,7 @@ namespace Minesweeper {
         return ComponentBase::ActiveChild();
     }
 
-    bool BoardComponentBase::Focusable() const {
+    constexpr bool BoardComponentBase::Focusable() const {
         return true;
     }
 

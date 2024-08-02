@@ -9,18 +9,19 @@
 
 
 namespace Minesweeper {
-
     class BoardComponentBase final : public ftxui::ComponentBase {
         Board& m_board;
+        bool m_hovered;
+
 
     public:
         static std::shared_ptr<BoardComponentBase> Create(Board& board);
         explicit BoardComponentBase(Board& board);
-        bool hovered;
+        [[nodiscard]] bool* hovered();
         ftxui::Element Render() override;
         bool OnEvent(ftxui::Event) override;
         ftxui::Component ActiveChild() override;
-        [[nodiscard]] bool Focusable() const override;
+        [[nodiscard]] constexpr bool Focusable() const override;
         void SetActiveChild(ComponentBase* child) override;
         ftxui::Component& childAtCoords(size_t r, size_t c);
     };
@@ -32,6 +33,8 @@ namespace Minesweeper {
     inline ftxui::Component& BoardComponentBase::childAtCoords(const size_t r, const size_t c) {
         return ChildAt(r * m_board.getColumnAmount() + c);
     }
+
+    inline bool* BoardComponentBase::hovered() { return &m_hovered; }
 
     using BoardComponent = std::shared_ptr<BoardComponentBase>;
 } // Minesweeper

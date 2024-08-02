@@ -13,40 +13,40 @@ namespace Minesweeper {
         bool m_isMine : 1 {false};
 
     public:
-        Tile(std::uint8_t row, std::uint8_t column);
-        [[nodiscard]] std::uint8_t getRow() const;
-        [[nodiscard]] std::uint8_t getColumn() const;
-        [[nodiscard]] std::uint8_t getSurroundingMines() const;
-        [[nodiscard]] bool isChecked() const;
-        [[nodiscard]] bool isFlagged() const;
-        [[nodiscard]] bool isMine() const;
-        void incrementSurroundingMines();
-        void becomeChecked();
-        void becomeMine();
-        void toggleFlag();
+        explicit Tile(std::uint8_t row, std::uint8_t column) noexcept;
+        [[nodiscard]] std::uint8_t getRow() const noexcept;
+        [[nodiscard]] std::uint8_t getColumn() const noexcept;
+        [[nodiscard]] std::uint8_t getSurroundingMines() const noexcept;
+        [[nodiscard]] bool isChecked() const noexcept;
+        [[nodiscard]] bool isFlagged() const noexcept;
+        [[nodiscard]] bool isMine() const noexcept;
+        void incrementSurroundingMines() noexcept;
+        void becomeChecked() noexcept;
+        void becomeMine() noexcept;
+        void toggleFlag() noexcept;
     };
 
-    inline std::uint8_t Tile::getRow() const {
+    inline std::uint8_t Tile::getRow() const noexcept {
         return m_row;
     }
 
-    inline std::uint8_t Tile::getColumn() const {
+    inline std::uint8_t Tile::getColumn() const noexcept {
         return m_column;
     }
 
-    inline std::uint8_t Tile::getSurroundingMines() const {
+    inline std::uint8_t Tile::getSurroundingMines() const noexcept {
         return m_surroundingMines;
     }
 
-    inline bool Tile::isChecked() const {
+    inline bool Tile::isChecked() const noexcept {
         return m_isChecked;
     }
 
-    inline bool Tile::isFlagged() const {
+    inline bool Tile::isFlagged() const noexcept {
         return m_isFlagged;
     }
 
-    inline bool Tile::isMine() const {
+    inline bool Tile::isMine() const noexcept {
         return m_isMine;
     }
 } // Minesweeper

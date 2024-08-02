@@ -23,13 +23,14 @@ namespace Minesweeper {
         void generateMines(std::uint8_t row, std::uint8_t column);
 
     public:
-        Board(std::uint8_t rowAmount, std::uint8_t columnAmount, std::uint16_t mineCount);
+        explicit Board(std::uint8_t rowAmount, std::uint8_t columnAmount, std::uint16_t mineCount);
         [[nodiscard]] std::uint8_t getRowAmount() const;
         [[nodiscard]] std::uint8_t getColumnAmount() const;
         Tile& at(std::uint8_t row, std::uint8_t column);
         void checkTile(std::uint8_t row, std::uint8_t column);
-        void toggleFlag(std::uint8_t row, std::uint8_t column);
+        void toggleFlag(std::uint8_t row, std::uint8_t column) noexcept;
         [[nodiscard]] bool foundAllMines() const;
+        void clearSafeTiles(std::uint8_t row, std::uint8_t column);
     };
 
     inline std::uint8_t Board::getRowAmount() const {
