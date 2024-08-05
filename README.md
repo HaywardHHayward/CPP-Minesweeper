@@ -1,8 +1,16 @@
+# Compiling
+
+For some reason this will not compile using MSVC due to PCG requiring that the machine's endianness be reported, which
+MSVC does not do, so for the foreseeable future, you will have to compile using other compilers such as GCC and Clang.
+
 # Libraries
 
 This project uses [FTXUI](https://github.com/ArthurSonzogni/FTXUI)
 by [Arthur Sonzogni](https://github.com/ArthurSonzogni), a TUI library for C++ which is licensed under the MIT License,
-a copy of which can be found [here](doc/lib_licenses/FTXUI.txt).
+a copy of which can be found [here](doc/lib_licenses/FTXUI.txt), and the [PCG](https://github.com/imneme/pcg-cpp) C++
+implementation by [M.E. O'Neill](https://github.com/imneme), which is dual-licensed under the MIT License and the Apache
+2.0 License, a copy of which can be
+found [here](doc/lib_licenses/PCG.txt).
 
 # License
 

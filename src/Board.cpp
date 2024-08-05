@@ -5,6 +5,8 @@
 #include <random>
 #include <stdexcept>
 #include <thread>
+#include <pcg/pcg_extras.hpp>
+#include <pcg/pcg_random.hpp>
 
 #include "Tile.hpp"
 
@@ -121,19 +123,15 @@ namespace Minesweeper {
     void Board::generateMines(const std::uint8_t row, const std::uint8_t column) {
         // TODO replace rejection sampling of 2d coordinates with randomly choosing an index from a vector that gets
         // updated to remove all mines, consistent mine generation time
-        std::random_device rd{};
-        std::seed_seq seedSeq{rd(), rd(), rd(), rd(), rd(), rd(), rd(), rd()};
-        std::mt19937 gen{seedSeq};
-        std::uniform_int_distribution<unsigned short> rowRandom(0, m_rowAmount - 1),
-                columnRandom(0, m_columnAmount - 1);
+        pcg32_k2_fast rng{pcg_extras::seed_seq_from<std::random_device>()};
         std::vector<Tile*> surroundingTiles;
         getSurroundingTiles(surroundingTiles, row, column);
         const bool tooManyMines{m_mineCount >= m_rowAmount * m_columnAmount - surroundingTiles.size()};
         const bool notEnoughSpace{m_rowAmount <= 3 && m_columnAmount <= 3};
         if (tooManyMines || notEnoughSpace) [[unlikely]] {
             while (m_minedTiles.size() < m_mineCount) {
-                const uint8_t randRow{static_cast<std::uint8_t>(rowRandom(gen))};
-                const uint8_t randColumn{static_cast<std::uint8_t>(columnRandom(gen))};
+                const uint8_t randRow{static_cast<uint8_t>(rng(m_rowAmount))};
+                const uint8_t randColumn{static_cast<std::uint8_t>(rng(m_columnAmount))};
                 if (randRow == row && randColumn == column) {
                     continue;
                 }
@@ -147,8 +145,8 @@ namespace Minesweeper {
             }
         } else {
             while (m_minedTiles.size() < m_mineCount) {
-                const uint8_t randRow{static_cast<std::uint8_t>(rowRandom(gen))};
-                const uint8_t randColumn{static_cast<std::uint8_t>(columnRandom(gen))};
+                const uint8_t randRow{static_cast<uint8_t>(rng(m_rowAmount))};
+                const uint8_t randColumn{static_cast<std::uint8_t>(rng(m_columnAmount))};
                 if (randRow == row && randColumn == column) {
                     continue;
                 }

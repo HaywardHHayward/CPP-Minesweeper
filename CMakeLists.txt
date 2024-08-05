@@ -16,6 +16,8 @@ if (NOT ftxui_POPULATED)
     add_subdirectory(${ftxui_SOURCE_DIR} ${ftxui_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif ()
 
+include_directories(lib)
+
 add_executable(Minesweeper src/main.cpp
         src/Tile.cpp
         src/Board.cpp
