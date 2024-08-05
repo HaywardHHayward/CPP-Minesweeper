@@ -11,8 +11,9 @@ int main() {
     int num;
     std::cin >> num;
     Minesweeper::Board board{static_cast<std::uint8_t>(num), 5, 5};
-    const Minesweeper::BoardComponent boardComponent{Minesweeper::BoardComponentBase::Create(board)};
     ftxui::ScreenInteractive screen{ftxui::ScreenInteractive::Fullscreen()};
+    const Minesweeper::BoardComponent boardComponent{
+        Minesweeper::BoardComponentBase::Create(board, screen.ExitLoopClosure())};
     screen.Loop(Hoverable(boardComponent, boardComponent->hovered()) | ftxui::center | ftxui::flex);
     std::cin.peek();
     return 0;

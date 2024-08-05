@@ -2,13 +2,15 @@
 
 #include <algorithm>
 #include <ftxui/component/component.hpp>
+#include <utility>
 
 #include "Tile.hpp"
 #include "TileComponentBase.hpp"
 #include "ftxui/dom/table.hpp"
 
 namespace Minesweeper {
-    BoardComponentBase::BoardComponentBase(Board& board): ComponentBase(), m_board{board}, m_hovered{false} {
+    BoardComponentBase::BoardComponentBase(Board& board, ftxui::Closure exit): ComponentBase(), m_exit{std::move(exit)},
+                                                                               m_board{board}, m_hovered{false} {
         for (int row = 0; row < board.getRowAmount(); ++row) {
             for (int col = 0; col < board.getColumnAmount(); ++col) {
                 TileComponent child = TileComponentBase::Create(board.at(row, col));
@@ -71,6 +73,9 @@ namespace Minesweeper {
                         break;
                 }
             }
+        }
+        else if (m_board.foundAllMines() || event == ftxui::Event::Character("q")) {
+            m_exit();
         }
         return true;
     }

@@ -4,12 +4,13 @@
 #include <format>
 #include <random>
 #include <stdexcept>
+#include <thread>
 
 #include "Tile.hpp"
 
 namespace Minesweeper {
     Board::Board(const std::uint8_t rowAmount, const std::uint8_t columnAmount,
-                 const std::uint16_t mineCount): m_minedTiles(mineCount),
+                 const std::uint16_t mineCount): m_tileLocks(rowAmount * columnAmount), m_minedTiles(mineCount),
                                                  m_uncheckedTiles(rowAmount * columnAmount),
                                                  m_mineCount(mineCount),
                                                  m_rowAmount(rowAmount),
@@ -37,10 +38,14 @@ namespace Minesweeper {
             throw std::out_of_range(std::format(
                 "row index provided ({}) greater than Board's max row amount ({})", row, m_rowAmount));
         }
-        return m_board.at(row * m_columnAmount + column);
+        return m_board.at(gridToLinear(row, column));
     }
 
     void Board::checkTile(const std::uint8_t row, const std::uint8_t column) {
+        const std::unique_lock tileLock{m_tileLocks.at(gridToLinear(row, column)), std::try_to_lock};
+        if (!tileLock.owns_lock()) {
+            return;
+        }
         Tile& tile{at(row, column)};
         if (tile.isFlagged()) {
             return;
@@ -57,8 +62,13 @@ namespace Minesweeper {
         if (tile.getSurroundingMines() == 0 && !tile.isMine()) {
             std::vector<Tile*> surroundingTiles;
             getSurroundingTiles(surroundingTiles, row, column);
+            std::vector<std::thread> threads;
+            threads.reserve(surroundingTiles.size());
             for (const Tile* sTile: surroundingTiles) {
-                checkTile(sTile->getRow(), sTile->getColumn());
+                threads.emplace_back(&Board::checkTile, this, sTile->getRow(), sTile->getColumn());
+            }
+            for (std::thread& thread: threads) {
+                thread.join();
             }
         }
     }
@@ -109,30 +119,36 @@ namespace Minesweeper {
     }
 
     void Board::generateMines(const std::uint8_t row, const std::uint8_t column) {
+        // TODO replace rejection sampling of 2d coordinates with randomly choosing an index from a vector that gets
+        // updated to remove all mines, consistent mine generation time
         std::random_device rd{};
         std::seed_seq seedSeq{rd(), rd(), rd(), rd(), rd(), rd(), rd(), rd()};
         std::mt19937 gen{seedSeq};
-        std::uniform_int_distribution<std::uint8_t> rowRandom(0, m_rowAmount - 1), columnRandom(0, m_columnAmount - 1);
+        std::uniform_int_distribution<unsigned short> rowRandom(0, m_rowAmount - 1),
+                columnRandom(0, m_columnAmount - 1);
         std::vector<Tile*> surroundingTiles;
         getSurroundingTiles(surroundingTiles, row, column);
         const bool tooManyMines{m_mineCount >= m_rowAmount * m_columnAmount - surroundingTiles.size()};
         const bool notEnoughSpace{m_rowAmount <= 3 && m_columnAmount <= 3};
         if (tooManyMines || notEnoughSpace) [[unlikely]] {
             while (m_minedTiles.size() < m_mineCount) {
-                const uint8_t randRow{(rowRandom(gen))};
-                const uint8_t randColumn{(columnRandom(gen))};
+                const uint8_t randRow{static_cast<std::uint8_t>(rowRandom(gen))};
+                const uint8_t randColumn{static_cast<std::uint8_t>(columnRandom(gen))};
                 if (randRow == row && randColumn == column) {
                     continue;
                 }
-                Tile& randTile{at(row, column)};
-                if (m_minedTiles.insert(&randTile).second) {
-                    // inserts tile into m_minedTiles, and checks if it was already in there
-                    randTile.becomeMine();
+                Tile& randTile{at(randRow, randColumn)};
+                if (m_minedTiles.contains(&randTile)) [[likely]] {
+                    // lots of mines, so more likely to select a spot more than once
+                    continue;
                 }
+                m_minedTiles.insert(&randTile);
+                randTile.becomeMine();
             }
         } else {
             while (m_minedTiles.size() < m_mineCount) {
-                const uint8_t randRow{(rowRandom(gen))}, randColumn{(columnRandom(gen))};
+                const uint8_t randRow{static_cast<std::uint8_t>(rowRandom(gen))};
+                const uint8_t randColumn{static_cast<std::uint8_t>(columnRandom(gen))};
                 if (randRow == row && randColumn == column) {
                     continue;
                 }
@@ -141,10 +157,11 @@ namespace Minesweeper {
                     // true if at(randRow, randColumn) is next to at(row, column)
                     continue;
                 }
-                if (m_minedTiles.insert(&randTile).second) {
-                    // inserts tile into m_minedTiles, and checks if it was already in there
-                    randTile.becomeMine();
+                if (m_minedTiles.contains(&randTile)) {
+                    continue;
                 }
+                m_minedTiles.insert(&randTile);
+                randTile.becomeMine();
             }
         }
         surroundingTiles.clear();
