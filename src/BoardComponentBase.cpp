@@ -1,8 +1,6 @@
 #include "BoardComponentBase.hpp"
 
 #include <algorithm>
-#include <ftxui/component/component.hpp>
-#include <utility>
 
 #include "Tile.hpp"
 #include "TileComponentBase.hpp"
@@ -23,10 +21,10 @@ namespace Minesweeper {
     ftxui::Element BoardComponentBase::Render() {
         std::vector<std::vector<ftxui::Element> > renderElements;
         renderElements.reserve(m_board.getRowAmount());
-        for (int row = 0; row < m_board.getRowAmount(); ++row) {
+        for (std::uint8_t row = 0; row < m_board.getRowAmount(); ++row) {
             std::vector<ftxui::Element> rowOfElements;
             rowOfElements.reserve(m_board.getColumnAmount());
-            for (int col = 0; col < m_board.getColumnAmount(); ++col) {
+            for (std::uint8_t col = 0; col < m_board.getColumnAmount(); ++col) {
                 rowOfElements.push_back(childAtCoords(row, col)->Render());
             }
             renderElements.push_back(std::move(rowOfElements));

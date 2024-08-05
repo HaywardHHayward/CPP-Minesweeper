@@ -1,11 +1,9 @@
 #include <iostream>
 #include <ftxui/component/screen_interactive.hpp>
-#include <ftxui/dom/elements.hpp>
 
 #include "Board.hpp"
 #include "BoardComponentBase.hpp"
 #include "Tile.hpp"
-#include "TileComponentBase.hpp"
 
 int main() {
     int num;

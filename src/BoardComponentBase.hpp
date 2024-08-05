@@ -2,11 +2,9 @@
 #define BOARDCOMPONENT_HPP
 
 #include <ftxui/component/component.hpp>
-#include <ftxui/dom/elements.hpp>
+#include <ftxui/component/task.hpp>
 
 #include "Board.hpp"
-#include "TileComponentBase.hpp"
-#include "../cmake-build-debug-vs/_deps/ftxui-src/include/ftxui/component/task.hpp"
 
 
 namespace Minesweeper {
