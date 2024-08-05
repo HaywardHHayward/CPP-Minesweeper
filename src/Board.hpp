@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <deque>
-#include <mutex>
 #include <unordered_set>
 #include <vector>
 
@@ -21,8 +20,7 @@ namespace Minesweeper {
         const std::uint8_t m_columnAmount;
         bool m_firstCheck{true};
 
-        void getSurroundingTiles(std::vector<Tile*>& vec,
-                                 std::uint8_t row, std::uint8_t column);
+        void getSurroundingTiles(std::vector<Tile*>& vec, std::uint8_t row, std::uint8_t column);
         void generateMines(std::uint8_t row, std::uint8_t column);
         [[nodiscard]] std::size_t gridToLinear(std::uint8_t row, std::uint8_t column) const;
 

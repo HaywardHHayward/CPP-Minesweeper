@@ -23,8 +23,8 @@ namespace Minesweeper {
                 m_rowAmount * m_columnAmount)));
         }
         m_board.reserve(rowAmount * columnAmount);
-        for (int row = 0; row < rowAmount; row++) {
-            for (int col = 0; col < columnAmount; col++) {
+        for (std::uint8_t row = 0; row < rowAmount; row++) {
+            for (std::uint8_t col = 0; col < columnAmount; col++) {
                 Tile* newTile{&m_board.emplace_back(row, col)};
                 m_uncheckedTiles.insert(newTile);
             }
@@ -34,11 +34,11 @@ namespace Minesweeper {
     Tile& Board::at(const std::uint8_t row, const std::uint8_t column) {
         if (column >= m_columnAmount) [[unlikely]] {
             throw std::out_of_range(std::format(
-                "column index provided ({}) greater than Board's max column amount ({})", column, m_columnAmount));
+                "column index provided ({}) greater than Board's max column index ({})", column, m_columnAmount - 1));
         }
         if (row >= m_rowAmount) [[unlikely]] {
             throw std::out_of_range(std::format(
-                "row index provided ({}) greater than Board's max row amount ({})", row, m_rowAmount));
+                "row index provided ({}) greater than Board's max row index ({})", row, m_rowAmount - 1));
         }
         return m_board.at(gridToLinear(row, column));
     }
@@ -76,7 +76,7 @@ namespace Minesweeper {
     }
 
     void Board::toggleFlag(const std::uint8_t row, const std::uint8_t column) noexcept {
-        Tile& tile = at(row, column);
+        Tile& tile{at(row, column)};
         if (tile.isChecked()) {
             return;
         }
@@ -102,13 +102,12 @@ namespace Minesweeper {
         }
     }
 
-    void Board::getSurroundingTiles(std::vector<Tile*>& vec,
-                                    const std::uint8_t row, const std::uint8_t column) {
-        for (int r = -1; r <= 1; r++) {
+    void Board::getSurroundingTiles(std::vector<Tile*>& vec, const std::uint8_t row, const std::uint8_t column) {
+        for (short r = -1; r <= 1; r++) {
             if (r + row < 0 || r + row >= m_rowAmount) {
                 continue;
             }
-            for (int c = -1; c <= 1; c++) {
+            for (short c = -1; c <= 1; c++) {
                 if (c + column < 0 || c + column >= m_columnAmount) {
                     continue;
                 }
