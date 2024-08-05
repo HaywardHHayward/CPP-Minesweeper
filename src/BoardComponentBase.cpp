@@ -2,7 +2,6 @@
 
 #include <algorithm>
 
-#include "Tile.hpp"
 #include "TileComponentBase.hpp"
 #include "ftxui/dom/table.hpp"
 
@@ -16,7 +15,6 @@ namespace Minesweeper {
             }
         }
     }
-
 
     ftxui::Element BoardComponentBase::Render() {
         std::vector<std::vector<ftxui::Element> > renderElements;

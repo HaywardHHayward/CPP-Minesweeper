@@ -6,15 +6,15 @@
 #include <unordered_set>
 #include <vector>
 
+#include "Tile.hpp"
+
 
 namespace Minesweeper {
-    class Tile;
-
     class Board final {
         std::deque<std::mutex> m_tileLocks;
-        std::unordered_set<Tile*> m_minedTiles{};
-        std::unordered_set<Tile*> m_uncheckedTiles{};
-        std::vector<Tile> m_board{};
+        std::unordered_set<Tile*> m_minedTiles;
+        std::unordered_set<Tile*> m_uncheckedTiles;
+        std::vector<Tile> m_board;
         std::uint16_t m_mineCount;
         const std::uint8_t m_rowAmount;
         const std::uint8_t m_columnAmount;
