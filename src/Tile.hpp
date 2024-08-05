@@ -14,6 +14,10 @@ namespace Minesweeper {
 
     public:
         explicit Tile(std::uint8_t row, std::uint8_t column) noexcept;
+        Tile(const Tile& other);
+        Tile(Tile&& other) noexcept;
+        Tile& operator=(Tile other);
+
         [[nodiscard]] std::uint8_t getRow() const noexcept;
         [[nodiscard]] std::uint8_t getColumn() const noexcept;
         [[nodiscard]] std::uint8_t getSurroundingMines() const noexcept;
@@ -25,6 +29,18 @@ namespace Minesweeper {
         void becomeMine() noexcept;
         void toggleFlag() noexcept;
     };
+
+    inline Tile::Tile(const std::uint8_t row, const std::uint8_t column) noexcept: m_row(row), m_column(column) { }
+
+    inline Tile::Tile(const Tile& other) = default;
+
+    inline Tile::Tile(Tile&& other) noexcept = default;
+
+    inline Tile& Tile::operator=(Tile other) {
+        using std::swap;
+        swap(*this, other);
+        return *this;
+    }
 
     inline std::uint8_t Tile::getRow() const noexcept {
         return m_row;
@@ -48,6 +64,34 @@ namespace Minesweeper {
 
     inline bool Tile::isMine() const noexcept {
         return m_isMine;
+    }
+
+    inline void Tile::incrementSurroundingMines() noexcept {
+        if (m_surroundingMines + 1 >= 9) {
+            return;
+        }
+        m_surroundingMines++;
+    }
+
+    inline void Tile::becomeChecked() noexcept {
+        if (m_isFlagged) {
+            return;
+        }
+        m_isChecked = true;
+    }
+
+    inline void Tile::becomeMine() noexcept {
+        if (m_isChecked) {
+            return;
+        }
+        m_isMine = true;
+    }
+
+    inline void Tile::toggleFlag() noexcept {
+        if (m_isChecked) {
+            return;
+        }
+        m_isFlagged = !m_isFlagged;
     }
 } // Minesweeper
 

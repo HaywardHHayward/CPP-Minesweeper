@@ -19,7 +19,6 @@ endif ()
 include_directories(lib)
 
 add_executable(Minesweeper src/main.cpp
-        src/Tile.cpp
         src/Board.cpp
         src/TileComponentBase.cpp
         src/BoardComponentBase.cpp)
