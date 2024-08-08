@@ -8,8 +8,8 @@
 namespace Minesweeper {
     BoardComponentBase::BoardComponentBase(Board& board, ftxui::Closure exit): ComponentBase(), m_exit{std::move(exit)},
                                                                                m_board{board}, m_hovered{false} {
-        for (int row = 0; row < board.getRowAmount(); ++row) {
-            for (int col = 0; col < board.getColumnAmount(); ++col) {
+        for (std::uint_fast8_t row = 0; row < board.getRowAmount(); ++row) {
+            for (std::uint_fast8_t col = 0; col < board.getColumnAmount(); ++col) {
                 TileComponent child = TileComponentBase::Create(board.at(row, col));
                 Add(Hoverable(child, &child->m_hovered));
             }
@@ -19,10 +19,10 @@ namespace Minesweeper {
     ftxui::Element BoardComponentBase::Render() {
         std::vector<std::vector<ftxui::Element> > renderElements;
         renderElements.reserve(m_board.getRowAmount());
-        for (std::uint8_t row = 0; row < m_board.getRowAmount(); ++row) {
+        for (std::uint_fast8_t row = 0; row < m_board.getRowAmount(); ++row) {
             std::vector<ftxui::Element> rowOfElements;
             rowOfElements.reserve(m_board.getColumnAmount());
-            for (std::uint8_t col = 0; col < m_board.getColumnAmount(); ++col) {
+            for (std::uint_fast8_t col = 0; col < m_board.getColumnAmount(); ++col) {
                 rowOfElements.push_back(childAtCoords(row, col)->Render());
             }
             renderElements.push_back(std::move(rowOfElements));

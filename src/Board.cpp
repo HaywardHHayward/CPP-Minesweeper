@@ -23,8 +23,8 @@ namespace Minesweeper {
                 m_rowAmount * m_columnAmount)));
         }
         m_board.reserve(rowAmount * columnAmount);
-        for (std::uint8_t row = 0; row < rowAmount; row++) {
-            for (std::uint8_t col = 0; col < columnAmount; col++) {
+        for (std::uint_fast8_t row = 0; row < rowAmount; row++) {
+            for (std::uint_fast8_t col = 0; col < columnAmount; col++) {
                 Tile* newTile{&m_board.emplace_back(row, col)};
                 m_uncheckedTiles.insert(newTile);
             }
@@ -106,11 +106,11 @@ namespace Minesweeper {
     }
 
     void Board::getSurroundingTiles(std::vector<Tile*>& vec, const std::uint8_t row, const std::uint8_t column) {
-        for (short r = -1; r <= 1; r++) {
+        for (std::int_fast8_t r = -1; r <= 1; r++) {
             if (r + row < 0 || r + row >= m_rowAmount) {
                 continue;
             }
-            for (short c = -1; c <= 1; c++) {
+            for (std::int_fast8_t c = -1; c <= 1; c++) {
                 if (c + column < 0 || c + column >= m_columnAmount) {
                     continue;
                 }
@@ -128,7 +128,7 @@ namespace Minesweeper {
         #else
         std::random_device rand;
         std::seed_seq seedSeq{rand(), rand(), rand(), rand(), rand(), rand(), rand(), rand()};
-        std::mt19937 rng{seedSeq};
+        std::minstd_rand rng{seedSeq};
         #endif
         std::vector<Tile*> surroundingTiles;
         surroundingTiles.reserve(8);
@@ -143,7 +143,7 @@ namespace Minesweeper {
                 std::erase(possibleTiles, tile);
             }
         }
-        for (int i = 0; i < m_mineCount; i++) {
+        for (std::uint_fast16_t i = 0; i < m_mineCount; i++) {
             #ifndef _MSC_VER
             const std::size_t randIndex{rng(possibleTiles.size())};
             #else
