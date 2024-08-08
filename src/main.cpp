@@ -109,7 +109,7 @@ int main() {
                 }};
             auto button = Button(buttonOption);
             auto customMenu = ftxui::Container::Vertical({inputs, button});
-            screen.Loop(customMenu | ftxui::center);
+            screen.Loop(customMenu | ftxui::border | ftxui::center);
             board = std::make_shared<Board>(row, column, mines);
         }
         break;
