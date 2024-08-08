@@ -11,9 +11,10 @@ int main() {
     const std::vector<std::string> entries{"Beginner", "Intermediate", "Expert", "Custom"};
     ftxui::MenuOption option;
     option.on_enter = screen.ExitLoopClosure();
-    auto menu = Menu(&entries, &selected, option);
+    ftxui::Component menu = Menu(&entries, &selected, option);
     screen.Loop(Renderer(menu, [menu] {
-        return ftxui::vbox({ftxui::text("Choose your difficulty"), menu->Render()}) | ftxui::center | ftxui::flex;
+        return ftxui::vbox({ftxui::text("Choose your difficulty"), ftxui::separator(), menu->Render()}) | ftxui::border
+               | ftxui::center;
     }));
     std::shared_ptr<Board> board;
     switch (selected) {
@@ -33,7 +34,7 @@ int main() {
             return EXIT_FAILURE;
     }
     const BoardComponent boardComponent{BoardComponentBase::Create(board, screen.ExitLoopClosure())};
-    screen.Loop(Hoverable(boardComponent, boardComponent->hovered()) | ftxui::center | ftxui::flex);
+    screen.Loop(Hoverable(boardComponent, boardComponent->hovered()) | ftxui::center);
     std::cin.peek();
     return 0;
 }

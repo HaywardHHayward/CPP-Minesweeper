@@ -6,8 +6,8 @@
 #include "ftxui/dom/table.hpp"
 
 namespace Minesweeper {
-    BoardComponentBase::BoardComponentBase(const std::shared_ptr<Board>& board, ftxui::Closure exit): ComponentBase(), m_exit{std::move(exit)},
-                                                                               m_board{board}, m_hovered{false} {
+    BoardComponentBase::BoardComponentBase(const std::shared_ptr<Board>& board, ftxui::Closure exit): ComponentBase(),
+        m_exit{std::move(exit)}, m_board{board}, m_hovered{false} {
         for (std::uint_fast8_t row = 0; row < board->getRowAmount(); ++row) {
             for (std::uint_fast8_t col = 0; col < board->getColumnAmount(); ++col) {
                 TileComponent child = TileComponentBase::Create(board->at(row, col));
@@ -39,7 +39,7 @@ namespace Minesweeper {
             if (!m_hovered) {
                 return true;
             }
-            for(const ftxui::Component& child : children_) {
+            for (const ftxui::Component& child: children_) {
                 child->OnEvent(event);
             }
             std::optional<std::pair<std::uint8_t, std::uint8_t> > possibleCoordinates;
@@ -70,8 +70,7 @@ namespace Minesweeper {
                         break;
                 }
             }
-        }
-        else if (m_board->foundAllMines() || event == ftxui::Event::Character("q")) {
+        } else if (m_board->foundAllMines() || event == ftxui::Event::Character("q")) {
             m_exit();
         }
         return true;

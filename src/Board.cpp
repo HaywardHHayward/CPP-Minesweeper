@@ -11,7 +11,8 @@
 #endif
 
 namespace Minesweeper {
-    Board::Board(const std::uint8_t rowAmount, const std::uint8_t columnAmount,
+    Board::Board(const std::uint8_t rowAmount,
+                 const std::uint8_t columnAmount,
                  const std::uint16_t mineCount): m_tileLocks(rowAmount * columnAmount), m_minedTiles(mineCount),
                                                  m_uncheckedTiles(rowAmount * columnAmount),
                                                  m_mineCount(mineCount),

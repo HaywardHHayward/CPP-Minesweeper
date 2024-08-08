@@ -25,7 +25,8 @@ namespace Minesweeper {
         ftxui::Component& childAtCoords(size_t r, size_t c);
     };
 
-    inline std::shared_ptr<BoardComponentBase> BoardComponentBase::Create(const std::shared_ptr<Board>& board, ftxui::Closure exit) {
+    inline std::shared_ptr<BoardComponentBase> BoardComponentBase::Create(const std::shared_ptr<Board>& board,
+                                                                          ftxui::Closure exit) {
         return std::make_shared<BoardComponentBase>(board, std::move(exit));
     }
 
