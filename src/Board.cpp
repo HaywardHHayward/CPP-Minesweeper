@@ -5,8 +5,10 @@
 #include <random>
 #include <stdexcept>
 #include <thread>
+#ifndef _MSC_VER
 #include <pcg/pcg_extras.hpp>
 #include <pcg/pcg_random.hpp>
+#endif
 
 namespace Minesweeper {
     Board::Board(const std::uint8_t rowAmount, const std::uint8_t columnAmount,
@@ -121,10 +123,13 @@ namespace Minesweeper {
     }
 
     void Board::generateMines(const std::uint8_t row, const std::uint8_t column) {
-        // TODO replace rejection sampling of 2d coordinates with randomly choosing an index from a vector that gets
-        // updated to remove all mines, consistent mine generation time
-        pcg32_k2_fast rng{pcg_extras::seed_seq_from<std::random_device>()};
+        #ifndef _MSC_VER
         pcg32_fast rng{pcg_extras::seed_seq_from<std::random_device>()};
+        #else
+        std::random_device rand;
+        std::seed_seq seedSeq{rand(), rand(), rand(), rand(), rand(), rand(), rand(), rand()};
+        std::mt19937 rng{seedSeq};
+        #endif
         std::vector<Tile*> surroundingTiles;
         surroundingTiles.reserve(8);
         getSurroundingTiles(surroundingTiles, row, column);
@@ -133,46 +138,17 @@ namespace Minesweeper {
         std::erase(possibleTiles, &at(row, column));
         const bool tooManyMines{m_mineCount >= m_rowAmount * m_columnAmount - surroundingTiles.size()};
         const bool notEnoughSpace{m_rowAmount <= 3 && m_columnAmount <= 3};
-        if (tooManyMines || notEnoughSpace) [[unlikely]] {
-            while (m_minedTiles.size() < m_mineCount) {
-                const uint8_t randRow{static_cast<uint8_t>(rng(m_rowAmount))};
-                const uint8_t randColumn{static_cast<std::uint8_t>(rng(m_columnAmount))};
-                if (randRow == row && randColumn == column) {
-                    continue;
-                }
-                Tile& randTile{at(randRow, randColumn)};
-                if (m_minedTiles.contains(&randTile)) [[likely]] {
-                    // lots of mines, so more likely to select a spot more than once
-                    continue;
-                }
-                m_minedTiles.insert(&randTile);
-                randTile.becomeMine();
-            }
-        } else {
-            while (m_minedTiles.size() < m_mineCount) {
-                const uint8_t randRow{static_cast<uint8_t>(rng(m_rowAmount))};
-                const uint8_t randColumn{static_cast<std::uint8_t>(rng(m_columnAmount))};
-                if (randRow == row && randColumn == column) {
-                    continue;
-                }
-                Tile& randTile{at(randRow, randColumn)};
-                if (std::ranges::find(surroundingTiles, &randTile) != surroundingTiles.end()) {
-                    // true if at(randRow, randColumn) is next to at(row, column)
-                    continue;
-                }
-                if (m_minedTiles.contains(&randTile)) {
-                    continue;
-                }
-                m_minedTiles.insert(&randTile);
-                randTile.becomeMine();
-            }
         if (!tooManyMines && !notEnoughSpace) [[likely]] {
             for (Tile* tile: surroundingTiles) {
                 std::erase(possibleTiles, tile);
             }
         }
         for (int i = 0; i < m_mineCount; i++) {
+            #ifndef _MSC_VER
             const std::size_t randIndex{rng(possibleTiles.size())};
+            #else
+            const std::size_t randIndex{std::uniform_int_distribution<std::size_t>(0, possibleTiles.size() - 1)(rng)};
+            #endif
             Tile& randTile{*possibleTiles.at(randIndex)};
             m_minedTiles.insert(&randTile);
             randTile.becomeMine();
