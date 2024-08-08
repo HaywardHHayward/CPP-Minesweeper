@@ -97,7 +97,7 @@ namespace Minesweeper {
                                         return tile->isFlagged();
                                     });
         if (flaggedSurroundingTiles.size() == safeTile.getSurroundingMines()) {
-            for(const Tile* tile : trueUncheckedTiles) {
+            for (const Tile* tile: trueUncheckedTiles) {
                 checkTile(tile->getRow(), tile->getColumn());
             }
         }
@@ -124,9 +124,13 @@ namespace Minesweeper {
         // TODO replace rejection sampling of 2d coordinates with randomly choosing an index from a vector that gets
         // updated to remove all mines, consistent mine generation time
         pcg32_k2_fast rng{pcg_extras::seed_seq_from<std::random_device>()};
+        pcg32_fast rng{pcg_extras::seed_seq_from<std::random_device>()};
         std::vector<Tile*> surroundingTiles;
         surroundingTiles.reserve(8);
         getSurroundingTiles(surroundingTiles, row, column);
+        std::vector<Tile*> possibleTiles;
+        std::ranges::transform(m_board, std::back_inserter(possibleTiles), [this](Tile& tile) { return &tile; });
+        std::erase(possibleTiles, &at(row, column));
         const bool tooManyMines{m_mineCount >= m_rowAmount * m_columnAmount - surroundingTiles.size()};
         const bool notEnoughSpace{m_rowAmount <= 3 && m_columnAmount <= 3};
         if (tooManyMines || notEnoughSpace) [[unlikely]] {
@@ -162,16 +166,25 @@ namespace Minesweeper {
                 m_minedTiles.insert(&randTile);
                 randTile.becomeMine();
             }
+        if (!tooManyMines && !notEnoughSpace) [[likely]] {
+            for (Tile* tile: surroundingTiles) {
+                std::erase(possibleTiles, tile);
+            }
+        }
+        for (int i = 0; i < m_mineCount; i++) {
+            const std::size_t randIndex{rng(possibleTiles.size())};
+            Tile& randTile{*possibleTiles.at(randIndex)};
+            m_minedTiles.insert(&randTile);
+            randTile.becomeMine();
+            std::erase(possibleTiles, &randTile);
         }
         surroundingTiles.clear();
         surroundingTiles.reserve(3 * m_mineCount); // minimum amount of tiles that could surround all the mines
         for (const Tile* tile: m_minedTiles) {
             getSurroundingTiles(surroundingTiles, tile->getRow(), tile->getColumn());
         }
+        std::erase_if(surroundingTiles, [this](const Tile* tile) { return tile->isMine(); });
         for (Tile* tile: surroundingTiles) {
-            if (tile->isMine()) {
-                continue;
-            }
             tile->incrementSurroundingMines();
         }
     }
