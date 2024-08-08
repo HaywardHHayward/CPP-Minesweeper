@@ -87,16 +87,19 @@ namespace Minesweeper {
             return;
         }
         std::vector<Tile*> uncheckedTiles, trueUncheckedTiles, flaggedSurroundingTiles;
+        uncheckedTiles.reserve(8);
         getSurroundingTiles(uncheckedTiles, row, column);
         std::erase_if(uncheckedTiles, [this](const Tile* tile) { return tile->isChecked(); });
+        flaggedSurroundingTiles.reserve(uncheckedTiles.size());
+        trueUncheckedTiles.reserve(uncheckedTiles.size());
         std::ranges::partition_copy(uncheckedTiles, std::back_inserter(flaggedSurroundingTiles),
                                     std::back_inserter(trueUncheckedTiles), [this](const Tile* tile) {
                                         return tile->isFlagged();
                                     });
         if (flaggedSurroundingTiles.size() == safeTile.getSurroundingMines()) {
-            std::ranges::for_each(trueUncheckedTiles, [this](const Tile* tile) {
+            for(const Tile* tile : trueUncheckedTiles) {
                 checkTile(tile->getRow(), tile->getColumn());
-            });
+            }
         }
     }
 
@@ -122,6 +125,7 @@ namespace Minesweeper {
         // updated to remove all mines, consistent mine generation time
         pcg32_k2_fast rng{pcg_extras::seed_seq_from<std::random_device>()};
         std::vector<Tile*> surroundingTiles;
+        surroundingTiles.reserve(8);
         getSurroundingTiles(surroundingTiles, row, column);
         const bool tooManyMines{m_mineCount >= m_rowAmount * m_columnAmount - surroundingTiles.size()};
         const bool notEnoughSpace{m_rowAmount <= 3 && m_columnAmount <= 3};

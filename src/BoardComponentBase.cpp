@@ -39,8 +39,9 @@ namespace Minesweeper {
             if (!m_hovered) {
                 return true;
             }
-            std::ranges::for_each(std::as_const(children_),
-                                  [&event](const ftxui::Component& child) { child->OnEvent(event); });
+            for(const ftxui::Component& child : children_) {
+                child->OnEvent(event);
+            }
             std::optional<std::pair<std::uint8_t, std::uint8_t> > possibleCoordinates;
             if (const auto it = std::ranges::find_if(std::as_const(children_),
                                                      [](const ftxui::Component& child) {
