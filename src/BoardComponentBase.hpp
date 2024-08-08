@@ -10,12 +10,12 @@
 namespace Minesweeper {
     class BoardComponentBase final : public ftxui::ComponentBase {
         ftxui::Closure m_exit;
-        Board& m_board;
+        std::shared_ptr<Board> m_board;
         bool m_hovered;
 
     public:
-        static std::shared_ptr<BoardComponentBase> Create(Board& board, ftxui::Closure exit);
-        explicit BoardComponentBase(Board& board, ftxui::Closure exit);
+        static std::shared_ptr<BoardComponentBase> Create(const std::shared_ptr<Board>& board, ftxui::Closure exit);
+        explicit BoardComponentBase(const std::shared_ptr<Board>& board, ftxui::Closure exit);
         [[nodiscard]] bool* hovered();
         ftxui::Element Render() override;
         bool OnEvent(ftxui::Event) override;
@@ -25,12 +25,12 @@ namespace Minesweeper {
         ftxui::Component& childAtCoords(size_t r, size_t c);
     };
 
-    inline std::shared_ptr<BoardComponentBase> BoardComponentBase::Create(Board& board, ftxui::Closure exit) {
+    inline std::shared_ptr<BoardComponentBase> BoardComponentBase::Create(const std::shared_ptr<Board>& board, ftxui::Closure exit) {
         return std::make_shared<BoardComponentBase>(board, std::move(exit));
     }
 
     inline ftxui::Component& BoardComponentBase::childAtCoords(const size_t r, const size_t c) {
-        return ChildAt(r * m_board.getColumnAmount() + c);
+        return ChildAt(r * m_board->getColumnAmount() + c);
     }
 
     inline bool* BoardComponentBase::hovered() { return &m_hovered; }

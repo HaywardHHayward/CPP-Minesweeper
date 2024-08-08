@@ -6,11 +6,11 @@
 #include "ftxui/dom/table.hpp"
 
 namespace Minesweeper {
-    BoardComponentBase::BoardComponentBase(Board& board, ftxui::Closure exit): ComponentBase(), m_exit{std::move(exit)},
+    BoardComponentBase::BoardComponentBase(const std::shared_ptr<Board>& board, ftxui::Closure exit): ComponentBase(), m_exit{std::move(exit)},
                                                                                m_board{board}, m_hovered{false} {
-        for (std::uint_fast8_t row = 0; row < board.getRowAmount(); ++row) {
-            for (std::uint_fast8_t col = 0; col < board.getColumnAmount(); ++col) {
-                TileComponent child = TileComponentBase::Create(board.at(row, col));
+        for (std::uint_fast8_t row = 0; row < board->getRowAmount(); ++row) {
+            for (std::uint_fast8_t col = 0; col < board->getColumnAmount(); ++col) {
+                TileComponent child = TileComponentBase::Create(board->at(row, col));
                 Add(Hoverable(child, &child->m_hovered));
             }
         }
@@ -18,11 +18,11 @@ namespace Minesweeper {
 
     ftxui::Element BoardComponentBase::Render() {
         std::vector<std::vector<ftxui::Element> > renderElements;
-        renderElements.reserve(m_board.getRowAmount());
-        for (std::uint_fast8_t row = 0; row < m_board.getRowAmount(); ++row) {
+        renderElements.reserve(m_board->getRowAmount());
+        for (std::uint_fast8_t row = 0; row < m_board->getRowAmount(); ++row) {
             std::vector<ftxui::Element> rowOfElements;
-            rowOfElements.reserve(m_board.getColumnAmount());
-            for (std::uint_fast8_t col = 0; col < m_board.getColumnAmount(); ++col) {
+            rowOfElements.reserve(m_board->getColumnAmount());
+            for (std::uint_fast8_t col = 0; col < m_board->getColumnAmount(); ++col) {
                 rowOfElements.push_back(childAtCoords(row, col)->Render());
             }
             renderElements.push_back(std::move(rowOfElements));
@@ -58,20 +58,20 @@ namespace Minesweeper {
             if (motion == ftxui::Mouse::Motion::Released) {
                 switch (button) {
                     case ftxui::Mouse::Left:
-                        m_board.checkTile(row, column);
+                        m_board->checkTile(row, column);
                         break;
                     case ftxui::Mouse::Middle:
-                        m_board.clearSafeTiles(row, column);
+                        m_board->clearSafeTiles(row, column);
                         break;
                     case ftxui::Mouse::Right:
-                        m_board.toggleFlag(row, column);
+                        m_board->toggleFlag(row, column);
                         break;
                     default:
                         break;
                 }
             }
         }
-        else if (m_board.foundAllMines() || event == ftxui::Event::Character("q")) {
+        else if (m_board->foundAllMines() || event == ftxui::Event::Character("q")) {
             m_exit();
         }
         return true;
