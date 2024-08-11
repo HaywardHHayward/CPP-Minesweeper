@@ -1,8 +1,3 @@
-# Compiling
-
-For some reason this will not compile using MSVC due to PCG requiring that the machine's endianness be reported, which
-MSVC does not do, so for the foreseeable future, you will have to compile using other compilers such as GCC and Clang.
-
 # Libraries
 
 This project uses [FTXUI](https://github.com/ArthurSonzogni/FTXUI)
