@@ -24,11 +24,8 @@ int main() {
     ftxui::ScreenInteractive screen{ftxui::ScreenInteractive::Fullscreen()};
     int selected = 0;
     const std::vector<std::string> entries{"Beginner", "Intermediate", "Expert", "Custom"};
-    const ftxui::MenuOption menuOption{
-        .on_enter = screen.ExitLoopClosure()
-    };
-    const ftxui::Component menu = Menu(&entries, &selected, menuOption);
-    screen.Loop(ftxui::Renderer(menu, [&] {
+    const ftxui::Component menu = ftxui::Menu(&entries, &selected, {.on_enter = screen.ExitLoopClosure()});
+    screen.Loop(Renderer(menu, [&] {
         return ftxui::vbox({ftxui::text("Choose your difficulty"), ftxui::separator(), menu->Render()}) | ftxui::border
                | ftxui::center;
     }));
@@ -59,31 +56,34 @@ int main() {
                 .placeholder = "Enter number of mines",
                 .multiline = false,
             };
-            const auto inputs{ftxui::Container::Vertical({
-                Input(&rowStr, rowOption) | ftxui::CatchEvent([&](const ftxui::Event& event) {
-                    return event.is_character() && !std::isdigit(event.character()[0]);
-                }) | ftxui::CatchEvent([&](const ftxui::Event& event) {
-                    return event.is_character() && rowStr.size() > std::numeric_limits<std::uint8_t>::digits10;
-                }),
-                Input(&columnStr, columnOption) | ftxui::CatchEvent([&](const ftxui::Event& event) {
-                    return event.is_character() && !std::isdigit(event.character()[0]);
-                }) | ftxui::CatchEvent([&](const ftxui::Event& event) {
-                    return event.is_character() && columnStr.size() > std::numeric_limits<std::uint8_t>::digits10;
-                }),
-                Input(&mineStr, mineOption) | ftxui::CatchEvent([&](const ftxui::Event& event) {
-                    return event.is_character() && !std::isdigit(event.character()[0]);
-                }) | ftxui::CatchEvent([&](const ftxui::Event& event) {
-                    return event.is_character() && mineStr.size() > std::numeric_limits<std::uint16_t>::digits10;
+            const ftxui::Component inputs{
+                ftxui::Container::Vertical({
+                    Input(&rowStr, rowOption) | ftxui::CatchEvent([&](const ftxui::Event& event) {
+                        return event.is_character() && !std::isdigit(event.character()[0]);
+                    }) | ftxui::CatchEvent([&](const ftxui::Event& event) {
+                        return event.is_character() && rowStr.size() > std::numeric_limits<std::uint8_t>::digits10;
+                    }),
+                    Input(&columnStr, columnOption) | ftxui::CatchEvent([&](const ftxui::Event& event) {
+                        return event.is_character() && !std::isdigit(event.character()[0]);
+                    }) | ftxui::CatchEvent([&](const ftxui::Event& event) {
+                        return event.is_character() && columnStr.size() > std::numeric_limits<std::uint8_t>::digits10;
+                    }),
+                    Input(&mineStr, mineOption) | ftxui::CatchEvent([&](const ftxui::Event& event) {
+                        return event.is_character() && !std::isdigit(event.character()[0]);
+                    }) | ftxui::CatchEvent([&](const ftxui::Event& event) {
+                        return event.is_character() && mineStr.size() > std::numeric_limits<std::uint16_t>::digits10;
+                    })
                 })
-            })};
-            const ftxui::ButtonOption buttonOption{
+            };
+            ftxui::Component button = ftxui::Button({
                 .label = "Enter row, column, and mine amounts.",
                 .on_click = [&] {
                     if (rowStr.empty() || columnStr.empty() || mineStr.empty()) {
                         return;
                     }
                     const unsigned long rowRaw{std::stoul(rowStr)}, columnRaw{std::stoul(columnStr)}, minesRaw{
-                        std::stoul(mineStr)};
+                        std::stoul(mineStr)
+                    };
                     if (rowRaw == 0 || rowRaw > UINT8_MAX ||
                         columnRaw == 0 || columnRaw > UINT8_MAX ||
                         minesRaw == 0 || minesRaw > UINT16_MAX) {
@@ -106,9 +106,9 @@ int main() {
                     column = static_cast<std::uint8_t>(columnRaw);
                     mines = static_cast<std::uint16_t>(minesRaw);
                     screen.Exit();
-                }};
-            auto button = Button(buttonOption);
-            auto customMenu = ftxui::Container::Vertical({inputs, button});
+                }
+            });
+            const ftxui::Component customMenu = ftxui::Container::Vertical({inputs, button});
             screen.Loop(customMenu | ftxui::border | ftxui::center);
             board = std::make_shared<Board>(row, column, mines);
         }
@@ -117,11 +117,16 @@ int main() {
             UNREACHABLE();
     }
     const BoardComponent baseBoard{BoardComponentBase::Create(board, screen.ExitLoopClosure())};
-    ftxui::Component boardComponent{Hoverable(baseBoard, baseBoard->hovered())};
-    ftxui::Component gameplayRender{Renderer(boardComponent, [&] {
-        return ftxui::hbox({boardComponent->Render(), ftxui::window(ftxui::text("Testing"), ftxui::text("Bazinga"))}) |
-               ftxui::center;
-    })};
+    const ftxui::Component boardComponent{Hoverable(baseBoard, baseBoard->hovered())};
+    const ftxui::Component gameplayRender{
+        Renderer(boardComponent, [&] {
+            return ftxui::vbox({
+                       ftxui::text(std::format("Remaining mines: {}", board->getRemainingMines())) | ftxui::border,
+                       ftxui::separator(),
+                       boardComponent->Render() | ftxui::border | ftxui::hcenter
+                   }) | ftxui::border | ftxui::center;
+        })
+    };
     screen.Loop(gameplayRender);
     std::cin.peek();
     return 0;
