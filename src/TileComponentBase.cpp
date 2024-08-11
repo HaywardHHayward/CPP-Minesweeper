@@ -11,9 +11,11 @@
 #endif
 
 namespace Minesweeper {
-    TileComponentBase::TileComponentBase(Tile& tile) noexcept: ComponentBase(), m_tile(tile),
-                                                               m_coords{std::make_pair(
-                                                                   tile.getRow(), tile.getColumn())},
+    TileComponentBase::TileComponentBase(Tile& tile) noexcept: ComponentBase(),
+                                                               m_tile(tile),
+                                                               m_coords{
+                                                                   std::make_pair(tile.getRow(), tile.getColumn())
+                                                               },
                                                                m_hovered{false} { }
 
     ftxui::Element TileComponentBase::Render() {

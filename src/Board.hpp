@@ -17,6 +17,7 @@ namespace Minesweeper {
         std::unordered_set<Tile*> m_uncheckedTiles;
         std::vector<Tile> m_board;
         std::uint16_t m_mineCount;
+        std::uint16_t m_flagCount{0};
         const std::uint8_t m_rowAmount;
         const std::uint8_t m_columnAmount;
         bool m_firstCheck{true};
@@ -29,6 +30,7 @@ namespace Minesweeper {
         explicit Board(std::uint8_t rowAmount, std::uint8_t columnAmount, std::uint16_t mineCount);
         [[nodiscard]] std::uint8_t getRowAmount() const noexcept;
         [[nodiscard]] std::uint8_t getColumnAmount() const noexcept;
+        [[nodiscard]] std::int32_t getRemainingMines() const noexcept;
         [[nodiscard]] bool foundAllMines() const;
         Tile& at(std::uint8_t row, std::uint8_t column);
         void checkTile(std::uint8_t row, std::uint8_t column);
@@ -42,6 +44,10 @@ namespace Minesweeper {
 
     inline std::uint8_t Board::getColumnAmount() const noexcept {
         return m_columnAmount;
+    }
+
+    inline std::int32_t Board::getRemainingMines() const noexcept {
+        return m_mineCount - m_flagCount;
     }
 
     inline bool Board::foundAllMines() const {

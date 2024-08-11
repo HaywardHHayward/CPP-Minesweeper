@@ -13,7 +13,8 @@
 namespace Minesweeper {
     Board::Board(const std::uint8_t rowAmount,
                  const std::uint8_t columnAmount,
-                 const std::uint16_t mineCount): m_tileLocks(rowAmount * columnAmount), m_minedTiles(mineCount),
+                 const std::uint16_t mineCount): m_tileLocks(rowAmount * columnAmount),
+                                                 m_minedTiles(mineCount),
                                                  m_uncheckedTiles(rowAmount * columnAmount),
                                                  m_mineCount(mineCount),
                                                  m_rowAmount(rowAmount),
@@ -80,6 +81,11 @@ namespace Minesweeper {
         Tile& tile{at(row, column)};
         if (tile.isChecked()) {
             return;
+        }
+        if (!tile.isFlagged()) {
+            m_flagCount++;
+        } else {
+            m_flagCount--;
         }
         tile.toggleFlag();
     }

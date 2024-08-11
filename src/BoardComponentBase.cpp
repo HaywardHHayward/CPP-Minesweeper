@@ -7,7 +7,9 @@
 
 namespace Minesweeper {
     BoardComponentBase::BoardComponentBase(const std::shared_ptr<Board>& board, ftxui::Closure exit): ComponentBase(),
-        m_exit{std::move(exit)}, m_board{board}, m_hovered{false} {
+        m_exit{std::move(exit)},
+        m_board{board},
+        m_hovered{false} {
         for (std::uint_fast8_t row = 0; row < board->getRowAmount(); ++row) {
             for (std::uint_fast8_t col = 0; col < board->getColumnAmount(); ++col) {
                 TileComponent child = TileComponentBase::Create(board->at(row, col));
@@ -29,7 +31,6 @@ namespace Minesweeper {
         }
         ftxui::Table table(renderElements);
         table.SelectAll().SeparatorVertical(ftxui::EMPTY);
-        table.SelectAll().Border(ftxui::LIGHT);
         return table.Render();
     }
 
@@ -45,9 +46,8 @@ namespace Minesweeper {
             std::optional<std::pair<std::uint8_t, std::uint8_t> > possibleCoordinates;
             if (const auto it = std::ranges::find_if(std::as_const(children_),
                                                      [](const ftxui::Component& child) {
-                                                         return std::static_pointer_cast<
-                                                                     TileComponentBase>(child->ActiveChild())->
-                                                                 m_hovered;
+                                                         return std::static_pointer_cast<TileComponentBase>(
+                                                             child->ActiveChild())->m_hovered;
                                                      }); it != children_.end()) {
                 possibleCoordinates = std::static_pointer_cast<TileComponentBase>((*it)->ChildAt(0))->getCoordinates();
             }
