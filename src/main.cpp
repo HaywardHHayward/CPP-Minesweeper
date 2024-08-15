@@ -22,9 +22,9 @@ enum Difficulty {
 int main() {
     using Minesweeper::Board, Minesweeper::BoardComponentBase, Minesweeper::BoardComponent;
     ftxui::ScreenInteractive screen{ftxui::ScreenInteractive::Fullscreen()};
-    int selected = 0;
+    int selected{0};
     const std::vector<std::string> entries{"Beginner", "Intermediate", "Expert", "Custom"};
-    const ftxui::Component menu = ftxui::Menu(&entries, &selected, {.on_enter = screen.ExitLoopClosure()});
+    const ftxui::Component menu{ftxui::Menu(&entries, &selected, {.on_enter = screen.ExitLoopClosure()})};
     screen.Loop(Renderer(menu, [&] {
         return ftxui::vbox({ftxui::text("Choose your difficulty"), ftxui::separator(), menu->Render()}) | ftxui::border
                | ftxui::center;
@@ -84,9 +84,9 @@ int main() {
                     const unsigned long rowRaw{std::stoul(rowStr)}, columnRaw{std::stoul(columnStr)}, minesRaw{
                         std::stoul(mineStr)
                     };
-                    if (rowRaw == 0 || rowRaw > UINT8_MAX ||
-                        columnRaw == 0 || columnRaw > UINT8_MAX ||
-                        minesRaw == 0 || minesRaw > UINT16_MAX) {
+                    if (rowRaw == 0 || rowRaw > UINT8_MAX
+                        || columnRaw == 0 || columnRaw > UINT8_MAX
+                        || minesRaw == 0 || minesRaw > UINT16_MAX) {
                         if (rowRaw == 0 || rowRaw > UINT8_MAX) {
                             rowStr.clear();
                         }
@@ -108,7 +108,7 @@ int main() {
                     screen.Exit();
                 }
             });
-            const ftxui::Component customMenu = ftxui::Container::Vertical({inputs, button});
+            const ftxui::Component customMenu{ftxui::Container::Vertical({inputs, button})};
             screen.Loop(customMenu | ftxui::border | ftxui::center);
             board = std::make_shared<Board>(row, column, mines);
         }
@@ -128,6 +128,5 @@ int main() {
         })
     };
     screen.Loop(gameplayRender);
-    std::cin.peek();
-    return 0;
+    return EXIT_SUCCESS;
 }
