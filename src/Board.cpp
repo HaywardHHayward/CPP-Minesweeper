@@ -1,9 +1,9 @@
 #include "Board.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <format>
 #include <random>
-#include <stdexcept>
 #include <thread>
 #ifndef _MSC_VER
 #include <pcg/pcg_extras.hpp>
@@ -19,11 +19,7 @@ namespace Minesweeper {
                                                  m_mineCount(mineCount),
                                                  m_rowAmount(rowAmount),
                                                  m_columnAmount(columnAmount) {
-        if (mineCount >= m_rowAmount * m_columnAmount) [[unlikely]] {
-            throw(std::invalid_argument(std::format(
-                "mineCount ({}) cannot be greater than or equal to the board size ({})", mineCount,
-                m_rowAmount * m_columnAmount)));
-        }
+        assert(mineCount < m_rowAmount * m_columnAmount);
         m_board.reserve(rowAmount * columnAmount);
         for (std::uint_fast8_t row = 0; row < rowAmount; row++) {
             for (std::uint_fast8_t col = 0; col < columnAmount; col++) {
@@ -34,14 +30,7 @@ namespace Minesweeper {
     }
 
     Tile& Board::at(const std::uint8_t row, const std::uint8_t column) {
-        if (column >= m_columnAmount) [[unlikely]] {
-            throw std::out_of_range(std::format(
-                "column index provided ({}) greater than Board's max column index ({})", column, m_columnAmount - 1));
-        }
-        if (row >= m_rowAmount) [[unlikely]] {
-            throw std::out_of_range(std::format(
-                "row index provided ({}) greater than Board's max row index ({})", row, m_rowAmount - 1));
-        }
+        assert(row < m_rowAmount && column < m_columnAmount);
         return m_board.at(gridToLinear(row, column));
     }
 
