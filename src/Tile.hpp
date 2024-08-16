@@ -14,9 +14,6 @@ namespace Minesweeper {
 
     public:
         explicit Tile(std::uint8_t row, std::uint8_t column) noexcept;
-        Tile(const Tile& other);
-        Tile(Tile&& other) noexcept;
-        Tile& operator=(Tile other);
 
         [[nodiscard]] std::uint8_t getRow() const noexcept;
         [[nodiscard]] std::uint8_t getColumn() const noexcept;
@@ -31,16 +28,6 @@ namespace Minesweeper {
     };
 
     inline Tile::Tile(const std::uint8_t row, const std::uint8_t column) noexcept: m_row(row), m_column(column) { }
-
-    inline Tile::Tile(const Tile& other) = default;
-
-    inline Tile::Tile(Tile&& other) noexcept = default;
-
-    inline Tile& Tile::operator=(Tile other) {
-        using std::swap;
-        swap(*this, other);
-        return *this;
-    }
 
     inline std::uint8_t Tile::getRow() const noexcept {
         return m_row;
