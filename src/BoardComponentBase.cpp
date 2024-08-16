@@ -70,7 +70,8 @@ namespace Minesweeper {
                         break;
                 }
             }
-        } else if (m_board->foundAllMines() || event == ftxui::Event::Character("q")) {
+        }
+        if (m_board->foundAllMines() || m_board->hitMine()) {
             m_exit();
         }
         return true;

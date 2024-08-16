@@ -51,6 +51,9 @@ namespace Minesweeper {
             return;
         }
         tile.becomeChecked();
+        if(tile.isMine()) {
+            m_hitMine = true;
+        }
         m_uncheckedTiles.erase(&tile);
         if (tile.getSurroundingMines() == 0 && !tile.isMine()) {
             std::vector<Tile*> surroundingTiles;
