@@ -5,20 +5,12 @@
 #include "Board.hpp"
 #include "BoardComponentBase.hpp"
 
-#if defined(_MSC_VER)
-#define UNREACHABLE() __assume(0)
-#elif defined(__GNUC__)
-#define UNREACHABLE() __builtin_unreachable()
-#else
-#define UNREACHABLE() 
+#ifndef UINT8_MAX
+#define UINT8_MAX 0xff
 #endif
-
-enum Difficulty {
-    beginner = 0,
-    intermediate = 1,
-    expert = 2,
-    custom = 3
-};
+#ifndef UINT16_MAX
+#define UINT16_MAX 0xffff
+#endif
 
 int main() {
     using Minesweeper::Board, Minesweeper::BoardComponentBase, Minesweeper::BoardComponent;
@@ -28,9 +20,6 @@ int main() {
             tui::ScreenInteractive screen{tui::ScreenInteractive::Fullscreen()};
             int difficultySelection{0};
             const std::vector<std::string> difficultyEntries{"Beginner", "Intermediate", "Expert", "Custom"};
-            const tui::Component menu{
-                tui::Menu(&difficultyEntries, &difficultySelection, {.on_enter = screen.ExitLoopClosure()})
-            };
             const tui::Component menu = tui::Menu(&difficultyEntries, std::bit_cast<int*>(&difficultySelection),
                                                   {.on_enter{screen.ExitLoopClosure()}});
             screen.Loop(Renderer(menu, [&] {

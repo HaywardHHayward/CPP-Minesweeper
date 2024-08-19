@@ -87,10 +87,11 @@ namespace Minesweeper {
         if (!safeTile.isChecked() || safeTile.getSurroundingMines() == 0) {
             return;
         }
-        std::vector<Tile*> uncheckedTiles, trueUncheckedTiles, flaggedSurroundingTiles;
+        std::vector<Tile*> uncheckedTiles;
         uncheckedTiles.reserve(8);
         getSurroundingTiles(uncheckedTiles, row, column);
         std::erase_if(uncheckedTiles, [this](const Tile* tile) { return tile->isChecked(); });
+        std::vector<Tile*> trueUncheckedTiles, flaggedSurroundingTiles;
         flaggedSurroundingTiles.reserve(uncheckedTiles.size());
         trueUncheckedTiles.reserve(uncheckedTiles.size());
         std::ranges::partition_copy(uncheckedTiles, std::back_inserter(flaggedSurroundingTiles),
@@ -122,13 +123,6 @@ namespace Minesweeper {
     }
 
     void Board::generateMines(const std::uint8_t row, const std::uint8_t column) {
-        #ifndef _MSC_VER
-        pcg32_fast rng{pcg_extras::seed_seq_from<std::random_device>()};
-        #else
-        std::random_device rand;
-        std::seed_seq seedSeq{rand(), rand(), rand(), rand(), rand(), rand(), rand(), rand()};
-        std::minstd_rand rng{seedSeq};
-        #endif
         std::vector<Tile*> surroundingTiles;
         surroundingTiles.reserve(8);
         getSurroundingTiles(surroundingTiles, row, column);
@@ -142,17 +136,23 @@ namespace Minesweeper {
                 std::erase(possibleTiles, tile);
             }
         }
-        for (std::uint_fast16_t i = 0; i < m_mineCount; i++) {
+        #ifndef _MSC_VER
+        pcg32_fast rng{pcg_extras::seed_seq_from<std::random_device>()};
+        #else
+        std::random_device rand;
+        std::seed_seq seedSeq{rand(), rand(), rand(), rand(), rand(), rand(), rand(), rand()};
+        std::minstd_rand rng{seedSeq};
+        #endif
         for (std::uint_fast16_t _{0}; _ < m_mineCount; _++) {
             #ifndef _MSC_VER
             const std::size_t randIndex{rng(possibleTiles.size())};
             #else
             const std::size_t randIndex{std::uniform_int_distribution<std::size_t>(0, possibleTiles.size() - 1)(rng)};
             #endif
-            Tile& randTile{*possibleTiles.at(randIndex)};
-            m_minedTiles.insert(&randTile);
-            randTile.becomeMine();
-            std::erase(possibleTiles, &randTile);
+            Tile* randTile{possibleTiles.at(randIndex)};
+            m_minedTiles.insert(randTile);
+            randTile->becomeMine();
+            std::erase(possibleTiles, randTile);
         }
         surroundingTiles.clear();
         surroundingTiles.reserve(3 * m_mineCount); // minimum amount of tiles that could surround all the mines
