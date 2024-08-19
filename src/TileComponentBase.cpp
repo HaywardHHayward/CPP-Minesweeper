@@ -2,12 +2,13 @@
 
 #include "Tile.hpp"
 
-#if defined(_MSC_VER) && !defined(__clang__)
+#if defined(_MSVC_VER) && !defined(__clang__)
 #define UNREACHABLE() __assume(false)
 #elif defined(__GNUC__) || defined(__clang__)
 #define UNREACHABLE() __builtin_unreachable()
 #else
-#define UNREACHABLE()
+[[noreturn]] inline void unreachable() { }
+#define UNREACHABLE() unreachable()
 #endif
 
 namespace Minesweeper {
@@ -33,16 +34,16 @@ namespace Minesweeper {
                                        ? " "
                                        : std::to_string(m_tile.getSurroundingMines()));
             switch (m_tile.getSurroundingMines()) {
-                case 0:
+                [[likely]] case 0:
                     tileRepr |= color(ftxui::Color());
                     break;
-                case 1:
+                [[likely]] case 1:
                     tileRepr |= color(ftxui::Color::Blue);
                     break;
-                case 2:
+                [[likely]] case 2:
                     tileRepr |= color(ftxui::Color::Green);
                     break;
-                case 3:
+                [[likely]] case 3:
                     tileRepr |= color(ftxui::Color::Red);
                     break;
                 case 4:
@@ -54,10 +55,10 @@ namespace Minesweeper {
                 case 6:
                     tileRepr |= color(ftxui::Color::Cyan);
                     break;
-                case 7:
+                [[unlikely]] case 7:
                     tileRepr |= color(ftxui::Color::Black);
                     break;
-                case 8:
+                [[unlikely]] case 8:
                     tileRepr |= color(ftxui::Color::GrayLight);
                     break;
                 default: // this should never be reached since it'll be a violation of Tile's surroundingMines invariant
