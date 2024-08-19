@@ -177,12 +177,33 @@ int main() {
                        }) | tui::border | tui::center;
             });
 
-            std::atomic_bool stop{false};
-            std::thread timerRefreshThread([&] {
-                while (!stop.load()) {
             steadyClock::time_point nextTime{startTime + std::chrono::seconds(1)};
+
+            #ifdef __cpp_lib_jthread
+            using timerType = std::jthread;
+            #define TIMER_ARGUMENT (const std::stop_token& stopToken)
+            auto timerPredicate = [&] (const std::stop_token& stop) {
+                return stop.stop_requested();
+            };
+            auto stopThread = [&] (std::jthread& thread) {
+                thread.request_stop();
+            };
+            #else
+            using timerType = std::thread;
+            #define TIMER_ARGUMENT ()
+            std::atomic_bool stopToken{false};
+            auto timerPredicate = [] (const std::atomic_bool& stop) {
+                return stop.load();
+            };
+            auto stopThread = [&stopToken] ([[maybe_unused]] timerType& thread) {
+                stopToken.store(true);
+            };
+            #endif
+
+            timerType timerRefreshThread([&] TIMER_ARGUMENT {
+                while (!timerPredicate(stopToken)) {
                     std::this_thread::sleep_until(nextTime);
-                    if (stop.load()) {
+                    if (timerPredicate(stopToken)) {
                         return;
                     }
                     screen.PostEvent(tui::Event::Custom);
@@ -190,7 +211,7 @@ int main() {
                 }
             });
             screen.Loop(gameplayRender);
-            stop.store(true);
+            stopThread(timerRefreshThread);
             const std::vector<std::string> endEntries{"Retry", "Exit"};
             enum EndSelection : int {
                 retry = 0,

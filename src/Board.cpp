@@ -58,14 +58,20 @@ namespace Minesweeper {
         if (tile.getSurroundingMines() == 0 && !tile.isMine()) {
             std::vector<Tile*> surroundingTiles;
             getSurroundingTiles(surroundingTiles, row, column);
+            #ifdef __cpp_lib_jthread
+            std::vector<std::jthread> threads;
+            #else
             std::vector<std::thread> threads;
+            #endif
             threads.reserve(surroundingTiles.size());
             for (const Tile* sTile: surroundingTiles) {
                 threads.emplace_back(&Board::checkTile, this, sTile->getRow(), sTile->getColumn());
             }
+            #ifndef __cpp_lib_jthread
             for (std::thread& thread: threads) {
                 thread.join();
             }
+            #endif
         }
     }
 
