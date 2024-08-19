@@ -30,6 +30,7 @@ int main() {
             const std::vector<std::string> difficultyEntries{"Beginner", "Intermediate", "Expert", "Custom"};
             const tui::Component menu = tui::Menu(&difficultyEntries, std::bit_cast<int*>(&difficultySelection),
                                                   {.on_enter{screen.ExitLoopClosure()}});
+
             ftxui::Component difficultyRender = Renderer(menu, [&] {
                 return tui::vbox({
                            tui::text("Choose your difficulty"),
@@ -38,6 +39,7 @@ int main() {
                        }) | tui::border
                        | tui::center;
             });
+
             screen.Loop(difficultyRender);
             std::shared_ptr<Board> board{nullptr};
             switch (difficultySelection) {
@@ -54,6 +56,7 @@ int main() {
                     std::string rowStr, columnStr, mineStr;
                     std::uint8_t row, column;
                     std::uint16_t mines;
+
                     const tui::InputOption rowOption{
                         .placeholder{"Enter number of rows"},
                         .multiline{false},
@@ -66,6 +69,7 @@ int main() {
                         .placeholder{"Enter number of mines"},
                         .multiline{false},
                     };
+
                     const tui::Component customInputs{
                         tui::Container::Vertical({
                             Input(&rowStr, rowOption) | tui::CatchEvent([&](const tui::Event& event) {
@@ -88,6 +92,7 @@ int main() {
                             })
                         })
                     };
+
                     auto clickFunction = [&] {
                         if (rowStr.empty() || columnStr.empty() || mineStr.empty()) {
                             return;
@@ -127,11 +132,13 @@ int main() {
                 }
                 break;
             }
+
             const BoardComponent baseBoard{BoardComponentBase::Create(board, screen.ExitLoopClosure())};
             const tui::Component boardComponent{Hoverable(baseBoard, baseBoard->hovered())};
             const tui::Component boardRenderer = Renderer(boardComponent, [&] {
                 return boardComponent->Render() | tui::border;
             });
+
             ftxui::Component countRenderer = tui::Renderer([&] {
                 return tui::text(std::format("Remaining mines: {:{}}", board->getRemainingMines(),
                                              std::to_string(board->getMineCount()).length()));
@@ -151,6 +158,7 @@ int main() {
                                          : std::format("Time: {:02}:{:02}", minutes, seconds));
                 });
             };
+
             tui::Component infoRenderer = ftxui::Renderer([&] {
                 return tui::hbox({
                     countRenderer->Render(),
@@ -160,6 +168,7 @@ int main() {
                     timeRenderer()->Render()
                 });
             });
+
             const tui::Component gameplayRender = Renderer(boardRenderer, [&] {
                 return tui::vbox({
                            infoRenderer->Render() | tui::flex,
@@ -167,6 +176,7 @@ int main() {
                            boardRenderer->Render() | tui::hcenter
                        }) | tui::border | tui::center;
             });
+
             std::chrono::steady_clock::time_point nextTime{startTime + std::chrono::seconds(1)};
             std::atomic_bool stop{false};
             std::thread timerRefreshThread([&] {
@@ -192,6 +202,7 @@ int main() {
             const tui::Element endMessage = board->hitMine()
                                                 ? tui::text("You hit a mine! You lose!")
                                                 : tui::text("You flagged all the mines! You win!");
+
             std::chrono::steady_clock::time_point endScreenTime{std::chrono::steady_clock::now()};
             const tui::Element endInfo = tui::hbox({
                 countRenderer->Render(),
@@ -200,6 +211,7 @@ int main() {
                 tui::filler(),
                 timeRenderer(endScreenTime)->Render()
             });
+
             const tui::Component endScreenRender = Renderer(endMenu, [&] {
                 return tui::vbox({
                            tui::vbox({
@@ -211,6 +223,7 @@ int main() {
                            endMenu->Render() | tui::hcenter
                        }) | tui::center;
             });
+
             screen.Loop(endScreenRender);
             timerRefreshThread.join();
             if (endScreenSelection == exit) {
