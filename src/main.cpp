@@ -18,7 +18,14 @@ int main() {
         while (true) {
             namespace tui = ftxui;
             tui::ScreenInteractive screen{tui::ScreenInteractive::Fullscreen()};
-            int difficultySelection{0};
+            screen.SetCursor({0, 0, ftxui::Screen::Cursor::Shape::Hidden});
+            enum Difficulty: int {
+                beginner = 0,
+                intermediate = 1,
+                expert = 2,
+                custom = 3
+            };
+            Difficulty difficultySelection;
             const std::vector<std::string> difficultyEntries{"Beginner", "Intermediate", "Expert", "Custom"};
             const tui::Component menu = tui::Menu(&difficultyEntries, std::bit_cast<int*>(&difficultySelection),
                                                   {.on_enter{screen.ExitLoopClosure()}});
@@ -119,27 +126,34 @@ int main() {
             }
             const BoardComponent baseBoard{BoardComponentBase::Create(board, screen.ExitLoopClosure())};
             const tui::Component boardComponent{Hoverable(baseBoard, baseBoard->hovered())};
-            const std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
-            const tui::Component gameplayRender{
-                Renderer(boardComponent, [&] {
-                    const std::chrono::steady_clock::time_point currentTime = std::chrono::steady_clock::now();
-                    const std::chrono::duration elapsedTime = currentTime - startTime;
-                    const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(elapsedTime).count() % 60;
-                    const auto minutes = std::chrono::duration_cast<std::chrono::minutes>(elapsedTime).count();
-                    return tui::vbox({
-                               tui::hbox({
-                                   tui::text(std::format("Remaining mines: {}", board->getRemainingMines())),
-                                   tui::filler(),
-                                   tui::separator(),
-                                   tui::filler(),
-                                   tui::text(std::format("Time: {:02}:{:02}", minutes <= 99 ? minutes : 99,
-                                                         minutes <= 99 ? seconds : 59))
-                               }) | tui::flex,
-                               tui::separator(),
-                               boardComponent->Render() | tui::border | tui::hcenter
-                           }) | tui::border | tui::center;
-                })
-            };
+            const tui::Component boardRenderer = Renderer(boardComponent, [&] {
+                return boardComponent->Render() | tui::border;
+            });
+            const std::chrono::steady_clock::time_point startTime{std::chrono::steady_clock::now()};
+            tui::Component infoRenderer = ftxui::Renderer([&] {
+                const std::chrono::steady_clock::time_point currentTime{std::chrono::steady_clock::now()};
+                const std::chrono::duration elapsedTime{currentTime - startTime};
+                const bool isMaxedOut{elapsedTime > std::chrono::minutes(99) + std::chrono::seconds(59)};
+                const auto seconds{std::chrono::duration_cast<std::chrono::seconds>(elapsedTime).count() % 60};
+                const auto minutes{std::chrono::duration_cast<std::chrono::minutes>(elapsedTime).count()};
+                return tui::hbox({
+                    tui::text(std::format("Remaining mines: {:{}}", board->getRemainingMines(),
+                                          std::to_string(board->getMineCount()).length())),
+                    tui::filler(),
+                    tui::separator(),
+                    tui::filler(),
+                    tui::text(isMaxedOut
+                                  ? "Time: MAXED"
+                                  : std::format("Time: {:02}:{:02}", minutes, seconds))
+                });
+            });
+            const tui::Component gameplayRender = Renderer(boardRenderer, [&] {
+                return tui::vbox({
+                           infoRenderer->Render() | tui::flex,
+                           tui::separator(),
+                           boardRenderer->Render() | tui::hcenter
+                       }) | tui::border | tui::center;
+            });
             std::chrono::steady_clock::time_point nextTime{startTime + std::chrono::seconds(1)};
             std::atomic_bool stop{false};
             std::thread timerRefreshThread([&] {
@@ -154,55 +168,56 @@ int main() {
             });
             screen.Loop(gameplayRender);
             stop.store(true);
-            std::chrono::steady_clock::time_point endScreenTime = std::chrono::steady_clock::now();
-            const int seconds = std::min(
-                static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(endScreenTime - startTime).count() %
-                                 60),
-                59);
-            const int minutes = std::min(
-                static_cast<int>(std::chrono::duration_cast<std::chrono::minutes>(endScreenTime - startTime).count()),
-                99);
             const std::vector<std::string> endEntries{"Retry", "Exit"};
-            int endScreenSelection;
-            const tui::Component endMenu{
-                tui::Menu(&endEntries, &endScreenSelection, {.on_enter = screen.ExitLoopClosure()})
+            enum EndSelection : int {
+                retry = 0,
+                exit = 1
             };
-            const tui::Element endMessage{
-                board->hitMine()
-                    ? tui::text("You hit a mine! You lose!")
-                    : tui::text("You flagged all the mines! You win!")
-            };
-            const tui::Component endScreenRender{
-                Renderer(endMenu, [&] {
-                    return tui::vbox({
-                               tui::vbox({
-                                   tui::hbox({
-                                       tui::filler(),
-                                       tui::separator(),
-                                       tui::filler(),
-                                       tui::text(std::format("Time: {:02}:{:02}", minutes, seconds))
-                                   }) | tui::flex,
-                                   tui::separator(),
-                                   boardComponent->Render() | tui::border | tui::hcenter
-                               }) | tui::border | tui::center,
-                               endMessage | tui::hcenter,
-                               endMenu->Render() | tui::hcenter
-                           }) | tui::center;
-                })
-            };
+            EndSelection endScreenSelection;
+            const tui::Component endMenu = tui::Menu(&endEntries, std::bit_cast<int*>(&endScreenSelection),
+                                                     {.on_enter = screen.ExitLoopClosure()});
+            const tui::Element endMessage = board->hitMine()
+                                                ? tui::text("You hit a mine! You lose!")
+                                                : tui::text("You flagged all the mines! You win!");
+            std::chrono::steady_clock::time_point endScreenTime{std::chrono::steady_clock::now()};
+            const bool isMaxedOut{endScreenTime - startTime > std::chrono::minutes(99) + std::chrono::seconds(59)};
+            const auto seconds
+                {std::chrono::duration_cast<std::chrono::seconds>(endScreenTime - startTime).count() % 60};
+            const auto minutes{std::chrono::duration_cast<std::chrono::minutes>(endScreenTime - startTime).count()};
+            const tui::Element endInfo = tui::hbox({
                 tui::text(std::format("Remaining mines: {:{}}", board->getRemainingMines(),
                                       std::to_string(board->getMineCount()).length())),
+                tui::filler(),
+                tui::separator(),
+                tui::filler(),
+                tui::text(isMaxedOut
+                              ? "Time: MAXED"
+                              : std::format("Time: {:02}:{:02}", minutes, seconds))
+            });
+            const tui::Component endScreenRender = Renderer(endMenu, [&] {
+                return tui::vbox({
+                           tui::vbox({
+                               endInfo | tui::flex,
+                               tui::separator(),
+                               boardRenderer->Render() | tui::border | tui::hcenter
+                           }) | tui::border | tui::center,
+                           endMessage | tui::hcenter,
+                           endMenu->Render() | tui::hcenter
+                       }) | tui::center;
+            });
             screen.Loop(endScreenRender);
             timerRefreshThread.join();
-            if (endScreenSelection == 1) {
+            if (endScreenSelection == exit) {
                 return EXIT_SUCCESS;
             }
         }
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
+        std::cout << "An unhandled exception occurred, exiting program..." << std::endl;
         return EXIT_FAILURE;
     } catch (...) {
-        std::cerr << "Unknown exception" << std::endl;
+        std::cerr << "Non-standard exception (not inheriting from std::exception)" << std::endl;
+        std::cout << "An unhandled exception occurred, exiting program..." << std::endl;
         return EXIT_FAILURE;
     }
 }
