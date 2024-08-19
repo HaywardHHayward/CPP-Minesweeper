@@ -2,6 +2,10 @@
 
 #include <algorithm>
 #include <cassert>
+#ifdef __cpp_lib_parallel_algorithm
+#define PARALLEL_ALGORITHM
+#include <execution>
+#endif
 #include <format>
 #include <random>
 #include <thread>
@@ -59,16 +63,17 @@ namespace Minesweeper {
             std::vector<Tile*> surroundingTiles;
             getSurroundingTiles(surroundingTiles, row, column);
             #ifdef __cpp_lib_jthread
-            std::vector<std::jthread> threads;
+            using threadType = std::jthread;
             #else
-            std::vector<std::thread> threads;
+            using threadType = std::thread;
             #endif
+            std::vector<threadType> threads;
             threads.reserve(surroundingTiles.size());
             for (const Tile* sTile: surroundingTiles) {
                 threads.emplace_back(&Board::checkTile, this, sTile->getRow(), sTile->getColumn());
             }
             #ifndef __cpp_lib_jthread
-            for (std::thread& thread: threads) {
+            for (threadType& thread: threads) {
                 thread.join();
             }
             #endif
@@ -96,18 +101,30 @@ namespace Minesweeper {
         std::vector<Tile*> uncheckedTiles;
         uncheckedTiles.reserve(8);
         getSurroundingTiles(uncheckedTiles, row, column);
-        std::erase_if(uncheckedTiles, [this](const Tile* tile) { return tile->isChecked(); });
+        std::erase_if(uncheckedTiles, [](const Tile* tile) { return tile->isChecked(); });
         std::vector<Tile*> trueUncheckedTiles, flaggedSurroundingTiles;
         flaggedSurroundingTiles.reserve(uncheckedTiles.size());
         trueUncheckedTiles.reserve(uncheckedTiles.size());
         std::ranges::partition_copy(uncheckedTiles, std::back_inserter(flaggedSurroundingTiles),
-                                    std::back_inserter(trueUncheckedTiles), [this](const Tile* tile) {
+                                    std::back_inserter(trueUncheckedTiles), [](const Tile* tile) {
                                         return tile->isFlagged();
                                     });
         if (flaggedSurroundingTiles.size() == safeTile.getSurroundingMines()) {
+            #ifdef __cpp_lib_jthread
+            using threadType = std::jthread;
+            #else
+            using threadType = std::thread;
+            #endif
+            std::vector<threadType> threads;
+            threads.reserve(trueUncheckedTiles.size());
             for (const Tile* tile: trueUncheckedTiles) {
-                checkTile(tile->getRow(), tile->getColumn());
+                threads.emplace_back(&Board::checkTile, this, tile->getRow(), tile->getColumn());
             }
+            #ifndef __cpp_lib_jthread
+            for (threadType& thread: threads) {
+                thread.join();
+            }
+            #endif
         }
     }
 
@@ -133,14 +150,17 @@ namespace Minesweeper {
         surroundingTiles.reserve(8);
         getSurroundingTiles(surroundingTiles, row, column);
         std::vector<Tile*> possibleTiles;
-        std::ranges::transform(m_board, std::back_inserter(possibleTiles), [this](Tile& tile) { return &tile; });
+        std::ranges::transform(m_board, std::back_inserter(possibleTiles), [](Tile& tile) { return &tile; });
         std::erase(possibleTiles, &at(row, column));
         const bool tooManyMines{m_mineCount >= m_rowAmount * m_columnAmount - surroundingTiles.size()};
         const bool notEnoughSpace{m_rowAmount <= 3 && m_columnAmount <= 3};
         if (!tooManyMines && !notEnoughSpace) [[likely]] {
-            for (Tile* tile: surroundingTiles) {
-                std::erase(possibleTiles, tile);
-            }
+            auto contains = [](auto& range, auto value) {
+                return std::ranges::find(range, value) != std::ranges::end(range);
+            };
+            std::erase_if(possibleTiles, [&surroundingTiles, contains](Tile* tile) {
+                return contains(surroundingTiles, tile);
+            });
         }
         #ifndef _MSC_VER
         pcg32_fast rng{pcg_extras::seed_seq_from<std::random_device>()};
@@ -161,13 +181,24 @@ namespace Minesweeper {
             std::erase(possibleTiles, randTile);
         }
         surroundingTiles.clear();
-        surroundingTiles.reserve(3 * m_mineCount); // minimum amount of tiles that could surround all the mines
+        surroundingTiles.reserve(8 * m_mineCount); // maximum amount of tiles that could surround all the mines
         for (const Tile* tile: m_minedTiles) {
             getSurroundingTiles(surroundingTiles, tile->getRow(), tile->getColumn());
         }
-        std::erase_if(surroundingTiles, [this](const Tile* tile) { return tile->isMine(); });
+        auto isMine = [](const Tile* tile) {
+            return tile->isMine();
+        };
+        #ifdef PARALLEL_ALGORITHM
+        surroundingTiles.erase(
+            std::remove_if(std::execution::par_unseq, surroundingTiles.begin(), surroundingTiles.end(), isMine),
+            surroundingTiles.end());
+        std::for_each(std::execution::par_unseq, surroundingTiles.begin(), surroundingTiles.end(),
+                      [](Tile* tile) { tile->incrementSurroundingMines(); });
+        #else
+        std::erase_if(surroundingTiles, isMine);
         for (Tile* tile: surroundingTiles) {
             tile->incrementSurroundingMines();
         }
+        #endif
     }
 } // Minesweeper
