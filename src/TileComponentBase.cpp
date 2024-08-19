@@ -28,7 +28,7 @@ namespace Minesweeper {
             return tileRepr;
         }
         if (m_tile.isMine()) {
-            tileRepr = ftxui::text("X") | color(ftxui::Color::Black);
+            tileRepr = ftxui::text("*") | color(ftxui::Color::Black);
         } else {
             tileRepr = ftxui::text(m_tile.getSurroundingMines() == 0
                                        ? " "
