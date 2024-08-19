@@ -26,7 +26,7 @@ int main() {
                 expert = 2,
                 custom = 3
             };
-            Difficulty difficultySelection;
+            Difficulty difficultySelection{custom};
             const std::vector<std::string> difficultyEntries{"Beginner", "Intermediate", "Expert", "Custom"};
             const tui::Component menu = tui::Menu(&difficultyEntries, std::bit_cast<int*>(&difficultySelection),
                                                   {.on_enter{screen.ExitLoopClosure()}});
@@ -196,7 +196,7 @@ int main() {
                 retry = 0,
                 exit = 1
             };
-            EndSelection endScreenSelection;
+            EndSelection endScreenSelection{exit};
             const tui::Component endMenu = tui::Menu(&endEntries, std::bit_cast<int*>(&endScreenSelection),
                                                      {.on_enter = screen.ExitLoopClosure()});
             const tui::Element endMessage = board->hitMine()
