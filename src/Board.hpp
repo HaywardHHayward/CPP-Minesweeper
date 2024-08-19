@@ -31,6 +31,7 @@ namespace Minesweeper {
         explicit Board(std::uint8_t rowAmount, std::uint8_t columnAmount, std::uint16_t mineCount);
         [[nodiscard]] std::uint8_t getRowAmount() const noexcept;
         [[nodiscard]] std::uint8_t getColumnAmount() const noexcept;
+        [[nodiscard]] std::uint16_t getMineCount() const noexcept;
         [[nodiscard]] std::int32_t getRemainingMines() const noexcept;
         [[nodiscard]] bool foundAllMines() const;
         [[nodiscard]] bool hitMine() const;
@@ -46,6 +47,10 @@ namespace Minesweeper {
 
     inline std::uint8_t Board::getColumnAmount() const noexcept {
         return m_columnAmount;
+    }
+
+    inline std::uint16_t Board::getMineCount() const noexcept {
+        return m_mineCount;
     }
 
     inline std::int32_t Board::getRemainingMines() const noexcept {

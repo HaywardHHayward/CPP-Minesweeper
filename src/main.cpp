@@ -177,7 +177,6 @@ int main() {
                     return tui::vbox({
                                tui::vbox({
                                    tui::hbox({
-                                       tui::text(std::format("Remaining mines: {}", board->getRemainingMines())),
                                        tui::filler(),
                                        tui::separator(),
                                        tui::filler(),
@@ -191,6 +190,8 @@ int main() {
                            }) | tui::center;
                 })
             };
+                tui::text(std::format("Remaining mines: {:{}}", board->getRemainingMines(),
+                                      std::to_string(board->getMineCount()).length())),
             screen.Loop(endScreenRender);
             timerRefreshThread.join();
             if (endScreenSelection == 1) {
