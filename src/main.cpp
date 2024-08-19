@@ -15,11 +15,11 @@
 
 int main() {
     using Minesweeper::Board, Minesweeper::BoardComponentBase, Minesweeper::BoardComponent;
+    namespace tui = ftxui;
     try {
         while (true) {
-            namespace tui = ftxui;
             tui::ScreenInteractive screen{tui::ScreenInteractive::Fullscreen()};
-            screen.SetCursor({0, 0, ftxui::Screen::Cursor::Shape::Hidden});
+            screen.SetCursor({0, 0, tui::Screen::Cursor::Shape::Hidden});
             enum Difficulty: int {
                 beginner = 0,
                 intermediate = 1,
@@ -31,7 +31,7 @@ int main() {
             const tui::Component menu = tui::Menu(&difficultyEntries, std::bit_cast<int*>(&difficultySelection),
                                                   {.on_enter{screen.ExitLoopClosure()}});
 
-            ftxui::Component difficultyRender = Renderer(menu, [&] {
+            tui::Component difficultyRender = Renderer(menu, [&] {
                 return tui::vbox({
                            tui::text("Choose your difficulty"),
                            tui::separator(),
@@ -139,7 +139,7 @@ int main() {
                 return boardComponent->Render() | tui::border;
             });
 
-            ftxui::Component countRenderer = tui::Renderer([&] {
+            tui::Component countRenderer = tui::Renderer([&] {
                 return tui::text(std::format("Remaining mines: {:{}}", board->getRemainingMines(),
                                              std::to_string(board->getMineCount()).length()));
             });
@@ -159,7 +159,7 @@ int main() {
                 });
             };
 
-            tui::Component infoRenderer = ftxui::Renderer([&] {
+            tui::Component infoRenderer = tui::Renderer([&] {
                 return tui::hbox({
                     countRenderer->Render(),
                     tui::filler(),
