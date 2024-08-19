@@ -1,4 +1,5 @@
 #include <chrono>
+#include <cstdint>
 #include <thread>
 #include <ftxui/component/screen_interactive.hpp>
 
@@ -29,14 +30,15 @@ int main() {
             const std::vector<std::string> difficultyEntries{"Beginner", "Intermediate", "Expert", "Custom"};
             const tui::Component menu = tui::Menu(&difficultyEntries, std::bit_cast<int*>(&difficultySelection),
                                                   {.on_enter{screen.ExitLoopClosure()}});
-            screen.Loop(Renderer(menu, [&] {
+            ftxui::Component difficultyRender = Renderer(menu, [&] {
                 return tui::vbox({
                            tui::text("Choose your difficulty"),
                            tui::separator(),
                            menu->Render()
                        }) | tui::border
                        | tui::center;
-            }));
+            });
+            screen.Loop(difficultyRender);
             std::shared_ptr<Board> board{nullptr};
             switch (difficultySelection) {
                 case beginner:
@@ -64,7 +66,7 @@ int main() {
                         .placeholder{"Enter number of mines"},
                         .multiline{false},
                     };
-                    const tui::Component inputs{
+                    const tui::Component customInputs{
                         tui::Container::Vertical({
                             Input(&rowStr, rowOption) | tui::CatchEvent([&](const tui::Event& event) {
                                 return event.is_character() && !std::isdigit(event.character()[0]);
@@ -86,39 +88,40 @@ int main() {
                             })
                         })
                     };
-                    tui::Component button = tui::Button({
-                        .label{"Enter row, column, and mine amounts."},
-                        .on_click = [&] {
-                            if (rowStr.empty() || columnStr.empty() || mineStr.empty()) {
-                                return;
-                            }
-                            const unsigned long rowRaw{std::stoul(rowStr)}, columnRaw{std::stoul(columnStr)},
-                                minesRaw{std::stoul(mineStr)};
-                            if (rowRaw == 0 || rowRaw > UINT8_MAX
-                                || columnRaw == 0 || columnRaw > UINT8_MAX
-                                || minesRaw == 0 || minesRaw > UINT16_MAX) {
-                                if (rowRaw == 0 || rowRaw > UINT8_MAX) {
-                                    rowStr.clear();
-                                }
-                                if (columnRaw == 0 || columnRaw > UINT8_MAX) {
-                                    columnStr.clear();
-                                }
-                                if (minesRaw == 0 || minesRaw > UINT16_MAX) {
-                                    mineStr.clear();
-                                }
-                                return;
-                            }
-                            if (minesRaw >= rowRaw * columnRaw) {
-                                mineStr.clear();
-                                return;
-                            }
-                            row = static_cast<std::uint8_t>(rowRaw);
-                            column = static_cast<std::uint8_t>(columnRaw);
-                            mines = static_cast<std::uint16_t>(minesRaw);
-                            screen.Exit();
+                    auto clickFunction = [&] {
+                        if (rowStr.empty() || columnStr.empty() || mineStr.empty()) {
+                            return;
                         }
+                        const unsigned long rowRaw{std::stoul(rowStr)}, columnRaw{std::stoul(columnStr)},
+                            minesRaw{std::stoul(mineStr)};
+                        if (rowRaw == 0 || rowRaw > UINT8_MAX
+                            || columnRaw == 0 || columnRaw > UINT8_MAX
+                            || minesRaw == 0 || minesRaw > UINT16_MAX) {
+                            if (rowRaw == 0 || rowRaw > UINT8_MAX) {
+                                rowStr.clear();
+                            }
+                            if (columnRaw == 0 || columnRaw > UINT8_MAX) {
+                                columnStr.clear();
+                            }
+                            if (minesRaw == 0 || minesRaw > UINT16_MAX) {
+                                mineStr.clear();
+                            }
+                            return;
+                        }
+                        if (minesRaw >= rowRaw * columnRaw) {
+                            mineStr.clear();
+                            return;
+                        }
+                        row = static_cast<std::uint8_t>(rowRaw);
+                        column = static_cast<std::uint8_t>(columnRaw);
+                        mines = static_cast<std::uint16_t>(minesRaw);
+                        screen.Exit();
+                    };
+                    tui::Component customButton = tui::Button({
+                        .label{"Enter row, column, and mine amounts."},
+                        .on_click{clickFunction}
                     });
-                    const tui::Component customMenu{tui::Container::Vertical({inputs, button})};
+                    const tui::Component customMenu{tui::Container::Vertical({customInputs, customButton})};
                     screen.Loop(customMenu | tui::border | tui::center);
                     board = std::make_shared<Board>(row, column, mines);
                 }
@@ -134,7 +137,8 @@ int main() {
                 const std::chrono::steady_clock::time_point currentTime{std::chrono::steady_clock::now()};
                 const std::chrono::duration elapsedTime{currentTime - startTime};
                 const bool isMaxedOut{elapsedTime > std::chrono::minutes(99) + std::chrono::seconds(59)};
-                const auto seconds{std::chrono::duration_cast<std::chrono::seconds>(elapsedTime).count() % 60};
+                const std::uint8_t seconds = static_cast<std::uint8_t>(
+                    std::chrono::duration_cast<std::chrono::seconds>(elapsedTime).count() % 60);
                 const auto minutes{std::chrono::duration_cast<std::chrono::minutes>(elapsedTime).count()};
                 return tui::hbox({
                     tui::text(std::format("Remaining mines: {:{}}", board->getRemainingMines(),
@@ -181,8 +185,8 @@ int main() {
                                                 : tui::text("You flagged all the mines! You win!");
             std::chrono::steady_clock::time_point endScreenTime{std::chrono::steady_clock::now()};
             const bool isMaxedOut{endScreenTime - startTime > std::chrono::minutes(99) + std::chrono::seconds(59)};
-            const auto seconds
-                {std::chrono::duration_cast<std::chrono::seconds>(endScreenTime - startTime).count() % 60};
+            const std::uint8_t seconds = static_cast<std::uint8_t>(
+                std::chrono::duration_cast<std::chrono::seconds>(endScreenTime - startTime).count() % 60);
             const auto minutes{std::chrono::duration_cast<std::chrono::minutes>(endScreenTime - startTime).count()};
             const tui::Element endInfo = tui::hbox({
                 tui::text(std::format("Remaining mines: {:{}}", board->getRemainingMines(),
