@@ -132,6 +132,11 @@ int main() {
             const tui::Component boardRenderer = Renderer(boardComponent, [&] {
                 return boardComponent->Render() | tui::border;
             });
+            ftxui::Component countRenderer = tui::Renderer([&] {
+                return tui::text(std::format("Remaining mines: {:{}}", board->getRemainingMines(),
+                                             std::to_string(board->getMineCount()).length()));
+            });
+
             const std::chrono::steady_clock::time_point startTime{std::chrono::steady_clock::now()};
             auto timeRenderer = [&](
                 const std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now()) {
@@ -148,8 +153,7 @@ int main() {
             };
             tui::Component infoRenderer = ftxui::Renderer([&] {
                 return tui::hbox({
-                    tui::text(std::format("Remaining mines: {:{}}", board->getRemainingMines(),
-                                          std::to_string(board->getMineCount()).length())),
+                    countRenderer->Render(),
                     tui::filler(),
                     tui::separator(),
                     tui::filler(),
@@ -190,8 +194,7 @@ int main() {
                                                 : tui::text("You flagged all the mines! You win!");
             std::chrono::steady_clock::time_point endScreenTime{std::chrono::steady_clock::now()};
             const tui::Element endInfo = tui::hbox({
-                tui::text(std::format("Remaining mines: {:{}}", board->getRemainingMines(),
-                                      std::to_string(board->getMineCount()).length())),
+                countRenderer->Render(),
                 tui::filler(),
                 tui::separator(),
                 tui::filler(),
