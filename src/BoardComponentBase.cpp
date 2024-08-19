@@ -35,40 +35,39 @@ namespace Minesweeper {
     }
 
     bool BoardComponentBase::OnEvent(ftxui::Event event) {
-        if (event.is_mouse()) {
-            auto [button, motion, shift, meta, control, x, y]{event.mouse()};
-            if (!m_hovered) {
-                return true;
-            }
-            for (const ftxui::Component& child: children_) {
-                child->OnEvent(event);
-            }
-            std::optional<std::pair<std::uint8_t, std::uint8_t> > possibleCoordinates;
-            if (const auto it =
-                std::ranges::find_if(std::as_const(children_), [](const ftxui::Component& child) {
-                    return std::static_pointer_cast<TileComponentBase>(child->ActiveChild())->m_hovered;
-                }); it != children_.end()) {
-                possibleCoordinates = std::static_pointer_cast<TileComponentBase>((*it)->ChildAt(0))->getCoordinates();
-            }
-            if (!possibleCoordinates.has_value()) {
-                return true;
-            }
-            auto [row, column]{possibleCoordinates.value()};
-            if (motion == ftxui::Mouse::Motion::Released) {
-                switch (button) {
-                    case ftxui::Mouse::Left:
-                        m_board->checkTile(row, column);
-                        break;
-                    case ftxui::Mouse::Middle:
-                        m_board->clearSafeTiles(row, column);
-                        break;
-                    case ftxui::Mouse::Right:
-                        m_board->toggleFlag(row, column);
-                        break;
-                    default:
-                        break;
-                }
-            }
+        for (const ftxui::Component& child: children_) {
+            child->OnEvent(event);
+        }
+        if (!m_hovered || !event.is_mouse()) {
+            return false;
+        }
+        auto [button, motion, shift, meta, control, x, y]{event.mouse()};
+        std::optional<std::pair<std::uint8_t, std::uint8_t> > possibleCoordinates;
+        auto isHovered = [](const ftxui::Component& child) {
+            return std::static_pointer_cast<TileComponentBase>(child->ActiveChild())->m_hovered;
+        };
+        if (const auto it{std::ranges::find_if(std::as_const(children_), isHovered)}; it != children_.end()) {
+            possibleCoordinates = std::static_pointer_cast<TileComponentBase>((*it)->ChildAt(0))->getCoordinates();
+        }
+        if (!possibleCoordinates.has_value()) {
+            return false;
+        }
+        auto [row, column]{possibleCoordinates.value()};
+        if (motion != ftxui::Mouse::Motion::Released) {
+            return true;
+        }
+        switch (button) {
+            case ftxui::Mouse::Left:
+                m_board->checkTile(row, column);
+                break;
+            case ftxui::Mouse::Middle:
+                m_board->clearSafeTiles(row, column);
+                break;
+            case ftxui::Mouse::Right:
+                m_board->toggleFlag(row, column);
+                break;
+            default:
+                break;
         }
         if (m_board->foundAllMines() || m_board->hitMine()) {
             m_exit();
