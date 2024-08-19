@@ -133,22 +133,27 @@ int main() {
                 return boardComponent->Render() | tui::border;
             });
             const std::chrono::steady_clock::time_point startTime{std::chrono::steady_clock::now()};
+            auto timeRenderer = [&](
+                const std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now()) {
+                return tui::Renderer([&] {
+                    const std::chrono::duration elapsedTime{endTime - startTime};
+                    const bool isMaxedOut{elapsedTime > std::chrono::minutes(99) + std::chrono::seconds(59)};
+                    const std::uint8_t seconds = static_cast<std::uint8_t>(
+                        std::chrono::duration_cast<std::chrono::seconds>(elapsedTime).count() % 60);
+                    const auto minutes{std::chrono::duration_cast<std::chrono::minutes>(elapsedTime).count()};
+                    return tui::text(isMaxedOut
+                                         ? "Time: MAXED"
+                                         : std::format("Time: {:02}:{:02}", minutes, seconds));
+                });
+            };
             tui::Component infoRenderer = ftxui::Renderer([&] {
-                const std::chrono::steady_clock::time_point currentTime{std::chrono::steady_clock::now()};
-                const std::chrono::duration elapsedTime{currentTime - startTime};
-                const bool isMaxedOut{elapsedTime > std::chrono::minutes(99) + std::chrono::seconds(59)};
-                const std::uint8_t seconds = static_cast<std::uint8_t>(
-                    std::chrono::duration_cast<std::chrono::seconds>(elapsedTime).count() % 60);
-                const auto minutes{std::chrono::duration_cast<std::chrono::minutes>(elapsedTime).count()};
                 return tui::hbox({
                     tui::text(std::format("Remaining mines: {:{}}", board->getRemainingMines(),
                                           std::to_string(board->getMineCount()).length())),
                     tui::filler(),
                     tui::separator(),
                     tui::filler(),
-                    tui::text(isMaxedOut
-                                  ? "Time: MAXED"
-                                  : std::format("Time: {:02}:{:02}", minutes, seconds))
+                    timeRenderer()->Render()
                 });
             });
             const tui::Component gameplayRender = Renderer(boardRenderer, [&] {
@@ -184,19 +189,13 @@ int main() {
                                                 ? tui::text("You hit a mine! You lose!")
                                                 : tui::text("You flagged all the mines! You win!");
             std::chrono::steady_clock::time_point endScreenTime{std::chrono::steady_clock::now()};
-            const bool isMaxedOut{endScreenTime - startTime > std::chrono::minutes(99) + std::chrono::seconds(59)};
-            const std::uint8_t seconds = static_cast<std::uint8_t>(
-                std::chrono::duration_cast<std::chrono::seconds>(endScreenTime - startTime).count() % 60);
-            const auto minutes{std::chrono::duration_cast<std::chrono::minutes>(endScreenTime - startTime).count()};
             const tui::Element endInfo = tui::hbox({
                 tui::text(std::format("Remaining mines: {:{}}", board->getRemainingMines(),
                                       std::to_string(board->getMineCount()).length())),
                 tui::filler(),
                 tui::separator(),
                 tui::filler(),
-                tui::text(isMaxedOut
-                              ? "Time: MAXED"
-                              : std::format("Time: {:02}:{:02}", minutes, seconds))
+                timeRenderer(endScreenTime)->Render()
             });
             const tui::Component endScreenRender = Renderer(endMenu, [&] {
                 return tui::vbox({
