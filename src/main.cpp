@@ -31,6 +31,8 @@ int main() {
             const tui::Component menu{
                 tui::Menu(&difficultyEntries, &difficultySelection, {.on_enter = screen.ExitLoopClosure()})
             };
+            const tui::Component menu = tui::Menu(&difficultyEntries, std::bit_cast<int*>(&difficultySelection),
+                                                  {.on_enter{screen.ExitLoopClosure()}});
             screen.Loop(Renderer(menu, [&] {
                 return tui::vbox({
                            tui::text("Choose your difficulty"),
@@ -39,7 +41,7 @@ int main() {
                        }) | tui::border
                        | tui::center;
             }));
-            std::shared_ptr<Board> board;
+            std::shared_ptr<Board> board{nullptr};
             switch (difficultySelection) {
                 case beginner:
                     board = std::make_shared<Board>(9, 9, 10);
@@ -55,16 +57,16 @@ int main() {
                     std::uint8_t row, column;
                     std::uint16_t mines;
                     const tui::InputOption rowOption{
-                        .placeholder = "Enter number of rows",
-                        .multiline = false,
+                        .placeholder{"Enter number of rows"},
+                        .multiline{false},
                     };
                     const tui::InputOption columnOption{
-                        .placeholder = "Enter number of columns",
-                        .multiline = false,
+                        .placeholder{"Enter number of columns"},
+                        .multiline{false},
                     };
                     const tui::InputOption mineOption{
-                        .placeholder = "Enter number of mines",
-                        .multiline = false,
+                        .placeholder{"Enter number of mines"},
+                        .multiline{false},
                     };
                     const tui::Component inputs{
                         tui::Container::Vertical({
@@ -89,14 +91,13 @@ int main() {
                         })
                     };
                     tui::Component button = tui::Button({
-                        .label = "Enter row, column, and mine amounts.",
+                        .label{"Enter row, column, and mine amounts."},
                         .on_click = [&] {
                             if (rowStr.empty() || columnStr.empty() || mineStr.empty()) {
                                 return;
                             }
-                            const unsigned long rowRaw{std::stoul(rowStr)}, columnRaw{std::stoul(columnStr)}, minesRaw{
-                                std::stoul(mineStr)
-                            };
+                            const unsigned long rowRaw{std::stoul(rowStr)}, columnRaw{std::stoul(columnStr)},
+                                minesRaw{std::stoul(mineStr)};
                             if (rowRaw == 0 || rowRaw > UINT8_MAX
                                 || columnRaw == 0 || columnRaw > UINT8_MAX
                                 || minesRaw == 0 || minesRaw > UINT16_MAX) {
@@ -126,8 +127,6 @@ int main() {
                     board = std::make_shared<Board>(row, column, mines);
                 }
                 break;
-                default:
-                    UNREACHABLE();
             }
             const BoardComponent baseBoard{BoardComponentBase::Create(board, screen.ExitLoopClosure())};
             const tui::Component boardComponent{Hoverable(baseBoard, baseBoard->hovered())};

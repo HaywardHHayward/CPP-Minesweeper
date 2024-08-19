@@ -2,41 +2,36 @@
 
 #include "Tile.hpp"
 
-#if defined(_MSC_VER)
-#define UNREACHABLE() __assume(0)
-#elif defined(__GNUC__)
+#if defined(_MSC_VER) && !defined(__clang__)
+#define UNREACHABLE() __assume(false)
+#elif defined(__GNUC__) || defined(__clang__)
 #define UNREACHABLE() __builtin_unreachable()
 #else
-#define UNREACHABLE() 
+#define UNREACHABLE()
 #endif
 
 namespace Minesweeper {
     TileComponentBase::TileComponentBase(Tile& tile) noexcept: ComponentBase(),
-                                                               m_tile(tile),
-                                                               m_coords{
-                                                                   std::make_pair(tile.getRow(), tile.getColumn())
-                                                               },
+                                                               m_tile{tile},
+                                                               m_coords(std::make_pair(
+                                                                   tile.getRow(), tile.getColumn())),
                                                                m_hovered{false} { }
 
     ftxui::Element TileComponentBase::Render() {
         ftxui::Element tileRepr;
         if (!m_tile.isChecked()) {
-            if (m_tile.isFlagged()) {
-                tileRepr = ftxui::text("P") | color(ftxui::Color::Red);
-            } else {
-                tileRepr = ftxui::text(" ") | color(ftxui::Color());
-            }
+            tileRepr = m_tile.isFlagged()
+                           ? ftxui::text("P") | color(ftxui::Color::Red)
+                           : ftxui::text(" ") | color(ftxui::Color());
             tileRepr |= bgcolor(ftxui::Color::GrayLight);
             return tileRepr;
         }
         if (m_tile.isMine()) {
             tileRepr = ftxui::text("X") | color(ftxui::Color::Black);
         } else {
-            if (m_tile.getSurroundingMines() == 0) {
-                tileRepr = ftxui::text(" ");
-            } else {
-                tileRepr = ftxui::text(std::to_string(m_tile.getSurroundingMines()));
-            }
+            tileRepr = ftxui::text(m_tile.getSurroundingMines() == 0
+                                       ? " "
+                                       : std::to_string(m_tile.getSurroundingMines()));
             switch (m_tile.getSurroundingMines()) {
                 case 0:
                     tileRepr |= color(ftxui::Color());
