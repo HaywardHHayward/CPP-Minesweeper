@@ -144,18 +144,18 @@ int main() {
                                              std::to_string(board->getMineCount()).length()));
             });
 
-            const std::chrono::steady_clock::time_point startTime{std::chrono::steady_clock::now()};
+            using steadyClock = std::chrono::steady_clock;
+            const steadyClock::time_point startTime{steadyClock::now()};
             auto timeRenderer = [&](
-                const std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now()) {
+                const steadyClock::time_point endTime = steadyClock::now()) {
                 return tui::Renderer([&] {
-                    const std::chrono::duration elapsedTime{endTime - startTime};
-                    const bool isMaxedOut{elapsedTime > std::chrono::minutes(99) + std::chrono::seconds(59)};
+                    namespace time = std::chrono;
+                    const time::duration elapsedTime{endTime - startTime};
+                    const bool isMaxedOut{elapsedTime > time::minutes(99) + time::seconds(59)};
                     const std::uint8_t seconds = static_cast<std::uint8_t>(
-                        std::chrono::duration_cast<std::chrono::seconds>(elapsedTime).count() % 60);
-                    const auto minutes{std::chrono::duration_cast<std::chrono::minutes>(elapsedTime).count()};
-                    return tui::text(isMaxedOut
-                                         ? "Time: MAXED"
-                                         : std::format("Time: {:02}:{:02}", minutes, seconds));
+                        time::duration_cast<time::seconds>(elapsedTime).count() % 60);
+                    const auto minutes{time::duration_cast<time::minutes>(elapsedTime).count()};
+                    return tui::text(isMaxedOut ? "Time: MAXED" : std::format("Time: {:02}:{:02}", minutes, seconds));
                 });
             };
 
@@ -177,10 +177,10 @@ int main() {
                        }) | tui::border | tui::center;
             });
 
-            std::chrono::steady_clock::time_point nextTime{startTime + std::chrono::seconds(1)};
             std::atomic_bool stop{false};
             std::thread timerRefreshThread([&] {
                 while (!stop.load()) {
+            steadyClock::time_point nextTime{startTime + std::chrono::seconds(1)};
                     std::this_thread::sleep_until(nextTime);
                     if (stop.load()) {
                         return;
@@ -203,7 +203,7 @@ int main() {
                                                 ? tui::text("You hit a mine! You lose!")
                                                 : tui::text("You flagged all the mines! You win!");
 
-            std::chrono::steady_clock::time_point endScreenTime{std::chrono::steady_clock::now()};
+            steadyClock::time_point endScreenTime{steadyClock::now()};
             const tui::Element endInfo = tui::hbox({
                 countRenderer->Render(),
                 tui::filler(),
