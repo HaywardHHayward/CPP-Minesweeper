@@ -6,6 +6,15 @@
 #include "Board.hpp"
 #include "BoardComponentBase.hpp"
 
+#if defined(_MSVC_VER) && !defined(__clang__)
+#define UNREACHABLE() __assume(false)
+#elif defined(__GNUC__) || defined(__clang__)
+#define UNREACHABLE() __builtin_unreachable()
+#else
+[[noreturn]] inline void unreachable() { }
+#define UNREACHABLE() unreachable()
+#endif
+
 #ifndef UINT8_MAX
 #define UINT8_MAX 0xff
 #endif
@@ -131,6 +140,8 @@ int main() {
                     board = std::make_shared<Board>(row, column, mines);
                 }
                 break;
+                default:
+                    UNREACHABLE();
             }
 
             const BoardComponent baseBoard{BoardComponentBase::Create(board, screen.ExitLoopClosure())};
@@ -177,8 +188,6 @@ int main() {
                        }) | tui::border | tui::center;
             });
 
-            steadyClock::time_point nextTime{startTime + std::chrono::seconds(1)};
-
             #ifdef __cpp_lib_jthread
             using timerType = std::jthread;
             #define TIMER_ARGUMENT (const std::stop_token& stopToken)
@@ -190,7 +199,7 @@ int main() {
             };
             #else
             using timerType = std::thread;
-            #define TIMER_ARGUMENT ()
+            #define TIMER_ARGUMENT
             std::atomic_bool stopToken{false};
             auto timerPredicate = [](const std::atomic_bool& stop) {
                 return stop.load();
@@ -200,6 +209,7 @@ int main() {
             };
             #endif
 
+            steadyClock::time_point nextTime{startTime + std::chrono::seconds(1)};
             timerType timerRefreshThread([&] TIMER_ARGUMENT {
                 while (!timerPredicate(stopToken)) {
                     std::this_thread::sleep_until(nextTime);
@@ -247,8 +257,13 @@ int main() {
 
             screen.Loop(endScreenRender);
             timerRefreshThread.join();
-            if (endScreenSelection == exit) {
-                return EXIT_SUCCESS;
+            switch(endScreenSelection) {
+                case retry:
+                    continue;
+                case exit:
+                    return EXIT_SUCCESS;
+                default:
+                    UNREACHABLE();
             }
         }
     } catch (const std::exception& e) {
