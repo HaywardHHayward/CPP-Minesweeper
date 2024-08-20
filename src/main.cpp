@@ -31,7 +31,7 @@ int main() {
             const tui::Component menu = tui::Menu(&difficultyEntries, std::bit_cast<int*>(&difficultySelection),
                                                   {.on_enter{screen.ExitLoopClosure()}});
 
-            tui::Component difficultyRender = Renderer(menu, [&] {
+            tui::Component difficultyRender = Renderer(menu, [&menu] {
                 return tui::vbox({
                            tui::text("Choose your difficulty"),
                            tui::separator(),
@@ -72,21 +72,21 @@ int main() {
 
                     const tui::Component customInputs{
                         tui::Container::Vertical({
-                            Input(&rowStr, rowOption) | tui::CatchEvent([&](const tui::Event& event) {
+                            Input(&rowStr, rowOption) | tui::CatchEvent([](const tui::Event& event) {
                                 return event.is_character() && !std::isdigit(event.character()[0]);
-                            }) | tui::CatchEvent([&](const tui::Event& event) {
+                            }) | tui::CatchEvent([&rowStr](const tui::Event& event) {
                                 return event.is_character() && rowStr.size() > std::numeric_limits<
                                            std::uint8_t>::digits10;
                             }),
-                            Input(&columnStr, columnOption) | tui::CatchEvent([&](const tui::Event& event) {
+                            Input(&columnStr, columnOption) | tui::CatchEvent([](const tui::Event& event) {
                                 return event.is_character() && !std::isdigit(event.character()[0]);
-                            }) | tui::CatchEvent([&](const tui::Event& event) {
+                            }) | tui::CatchEvent([&columnStr](const tui::Event& event) {
                                 return event.is_character() && columnStr.size() > std::numeric_limits<
                                            std::uint8_t>::digits10;
                             }),
-                            Input(&mineStr, mineOption) | tui::CatchEvent([&](const tui::Event& event) {
+                            Input(&mineStr, mineOption) | tui::CatchEvent([](const tui::Event& event) {
                                 return event.is_character() && !std::isdigit(event.character()[0]);
-                            }) | tui::CatchEvent([&](const tui::Event& event) {
+                            }) | tui::CatchEvent([&mineStr](const tui::Event& event) {
                                 return event.is_character() && mineStr.size() > std::numeric_limits<
                                            std::uint16_t>::digits10;
                             })
@@ -135,18 +135,18 @@ int main() {
 
             const BoardComponent baseBoard{BoardComponentBase::Create(board, screen.ExitLoopClosure())};
             const tui::Component boardComponent{Hoverable(baseBoard, baseBoard->hovered())};
-            const tui::Component boardRenderer = Renderer(boardComponent, [&] {
+            const tui::Component boardRenderer = Renderer(boardComponent, [&boardComponent] {
                 return boardComponent->Render() | tui::border;
             });
 
-            tui::Component countRenderer = tui::Renderer([&] {
+            tui::Component countRenderer = tui::Renderer([&board] {
                 return tui::text(std::format("Remaining mines: {:{}}", board->getRemainingMines(),
                                              std::to_string(board->getMineCount()).length()));
             });
 
             using steadyClock = std::chrono::steady_clock;
             const steadyClock::time_point startTime{steadyClock::now()};
-            auto timeRenderer = [&](
+            auto timeRenderer = [&startTime](
                 const steadyClock::time_point endTime = steadyClock::now()) {
                 return tui::Renderer([&] {
                     namespace time = std::chrono;
@@ -159,7 +159,7 @@ int main() {
                 });
             };
 
-            tui::Component infoRenderer = tui::Renderer([&] {
+            tui::Component infoRenderer = tui::Renderer([&countRenderer, &timeRenderer] {
                 return tui::hbox({
                     countRenderer->Render(),
                     tui::filler(),
@@ -169,7 +169,7 @@ int main() {
                 });
             });
 
-            const tui::Component gameplayRender = Renderer(boardRenderer, [&] {
+            const tui::Component gameplayRender = Renderer(boardRenderer, [&infoRenderer, &boardRenderer] {
                 return tui::vbox({
                            infoRenderer->Render() | tui::flex,
                            tui::separator(),
@@ -182,20 +182,20 @@ int main() {
             #ifdef __cpp_lib_jthread
             using timerType = std::jthread;
             #define TIMER_ARGUMENT (const std::stop_token& stopToken)
-            auto timerPredicate = [&] (const std::stop_token& stop) {
+            auto timerPredicate = [] (const std::stop_token& stop) {
                 return stop.stop_requested();
             };
-            auto stopThread = [&] (std::jthread& thread) {
+            auto stopThread = [] (std::jthread& thread) {
                 thread.request_stop();
             };
             #else
             using timerType = std::thread;
             #define TIMER_ARGUMENT ()
             std::atomic_bool stopToken{false};
-            auto timerPredicate = [] (const std::atomic_bool& stop) {
+            auto timerPredicate = [](const std::atomic_bool& stop) {
                 return stop.load();
             };
-            auto stopThread = [&stopToken] ([[maybe_unused]] timerType& thread) {
+            auto stopThread = [&stopToken]([[maybe_unused]] timerType& thread) {
                 stopToken.store(true);
             };
             #endif
