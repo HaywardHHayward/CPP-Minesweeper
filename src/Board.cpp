@@ -28,8 +28,7 @@ namespace Minesweeper {
         m_board.reserve(rowAmount * columnAmount);
         for (std::uint_fast8_t row{0}; row < rowAmount; row++) {
             for (std::uint_fast8_t col{0}; col < columnAmount; col++) {
-                Tile* newTile{&m_board.emplace_back(row, col)};
-                m_uncheckedTiles.insert(newTile);
+                m_uncheckedTiles.insert(&m_board.emplace_back(row, col));
             }
         }
     }
@@ -168,16 +167,18 @@ namespace Minesweeper {
         std::seed_seq seedSeq{rand(), rand(), rand(), rand(), rand(), rand(), rand(), rand()};
         std::minstd_rand rng{seedSeq};
         #endif
-        for (std::uint_fast16_t _{0}; _ < m_mineCount; _++) {
+        const std::size_t cachedSize{possibleTiles.size()};
+        for (std::uint_fast16_t i{0}; i < m_mineCount; i++) {
             #ifndef _MSC_VER
-            const std::size_t randIndex{rng(possibleTiles.size())};
+            const std::size_t randIndex{rng(cachedSize - i)};
             #else
-            const std::size_t randIndex{std::uniform_int_distribution<std::size_t>(0, possibleTiles.size() - 1)(rng)};
+            const std::size_t randIndex{std::uniform_int_distribution<std::size_t>(0, cachedSize - (i + 1))(rng)};
             #endif
             Tile* randTile{possibleTiles.at(randIndex)};
             m_minedTiles.insert(randTile);
             randTile->becomeMine();
-            std::erase(possibleTiles, randTile);
+            std::ignore = std::ranges::remove(possibleTiles, randTile);
+            // will essentially erase randTile from possibleTiles without having to reallocate possibleTiles
         }
         surroundingTiles.clear();
         surroundingTiles.reserve(8 * m_mineCount); // maximum amount of tiles that could surround all the mines
