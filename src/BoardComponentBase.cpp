@@ -10,8 +10,8 @@ namespace Minesweeper {
         m_exit{std::move(exit)},
         m_board{board},
         m_hovered{false} {
-        for (std::uint_fast8_t row{0}; row < board->getRowAmount(); ++row) {
-            for (std::uint_fast8_t col{0}; col < board->getColumnAmount(); ++col) {
+        for (std::uint_fast8_t row{0}; row < board->getRowAmount(); row++) {
+            for (std::uint_fast8_t col{0}; col < board->getColumnAmount(); col++) {
                 TileComponent child{TileComponentBase::Create(board->at(row, col))};
                 Add(Hoverable(child, &child->m_hovered));
             }
@@ -21,10 +21,10 @@ namespace Minesweeper {
     ftxui::Element BoardComponentBase::Render() {
         std::vector<std::vector<ftxui::Element> > renderElements;
         renderElements.reserve(m_board->getRowAmount());
-        for (std::uint_fast8_t row{0}; row < m_board->getRowAmount(); ++row) {
+        for (std::uint_fast8_t row{0}; row < m_board->getRowAmount(); row++) {
             std::vector<ftxui::Element> rowOfElements;
             rowOfElements.reserve(m_board->getColumnAmount());
-            for (std::uint_fast8_t col{0}; col < m_board->getColumnAmount(); ++col) {
+            for (std::uint_fast8_t col{0}; col < m_board->getColumnAmount(); col++) {
                 rowOfElements.push_back(childAtCoords(row, col)->Render());
             }
             renderElements.push_back(std::move(rowOfElements));
@@ -42,17 +42,19 @@ namespace Minesweeper {
             return false;
         }
         auto [button, motion, shift, meta, control, x, y]{event.mouse()};
-        std::optional<std::pair<std::uint8_t, std::uint8_t> > possibleCoordinates;
         auto isHovered = [](const ftxui::Component& child) {
-            return std::static_pointer_cast<TileComponentBase>(child->ActiveChild())->m_hovered;
+            if (child->ActiveChild() == nullptr) {
+                return false;
+            }
+            const std::shared_ptr<TileComponentBase> possibleCast = std::dynamic_pointer_cast<TileComponentBase>(
+                child->ActiveChild());
+            return possibleCast != nullptr && possibleCast->m_hovered;
         };
-        if (const auto it{std::ranges::find_if(std::as_const(children_), isHovered)}; it != children_.end()) {
-            possibleCoordinates = std::static_pointer_cast<TileComponentBase>((*it)->ChildAt(0))->getCoordinates();
-        }
-        if (!possibleCoordinates.has_value()) {
+        const auto it{std::ranges::find_if(std::as_const(children_), isHovered)};
+        if (it == children_.end()) {
             return false;
         }
-        auto [row, column]{possibleCoordinates.value()};
+        auto [row, column] = std::static_pointer_cast<TileComponentBase>((*it)->ActiveChild())->getCoordinates();
         if (motion != ftxui::Mouse::Motion::Released) {
             return true;
         }
