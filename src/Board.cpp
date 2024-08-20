@@ -8,6 +8,7 @@
 #endif
 #include <format>
 #include <random>
+#include <ranges>
 #include <thread>
 #ifndef _MSC_VER
 #include <pcg/pcg_extras.hpp>
@@ -102,14 +103,12 @@ namespace Minesweeper {
         uncheckedTiles.reserve(8);
         getSurroundingTiles(uncheckedTiles, row, column);
         std::erase_if(uncheckedTiles, [](const Tile* tile) { return tile->isChecked(); });
-        std::vector<Tile*> trueUncheckedTiles, flaggedSurroundingTiles;
-        flaggedSurroundingTiles.reserve(uncheckedTiles.size());
-        trueUncheckedTiles.reserve(uncheckedTiles.size());
-        std::ranges::partition_copy(uncheckedTiles, std::back_inserter(flaggedSurroundingTiles),
-                                    std::back_inserter(trueUncheckedTiles), [](const Tile* tile) {
-                                        return tile->isFlagged();
-                                    });
-        if (flaggedSurroundingTiles.size() == safeTile.getSurroundingMines()) {
+        const auto trueUncheckedTiles = std::ranges::subrange(uncheckedTiles.begin(),
+                                                              std::ranges::remove_if(
+                                                                  uncheckedTiles, [](const Tile* tile) {
+                                                                      return tile->isFlagged();
+                                                                  }).begin());
+        if (uncheckedTiles.size() - trueUncheckedTiles.size() == safeTile.getSurroundingMines()) {
             #ifdef __cpp_lib_jthread
             using threadType = std::jthread;
             #else
@@ -185,18 +184,14 @@ namespace Minesweeper {
         for (const Tile* tile: m_minedTiles) {
             getSurroundingTiles(surroundingTiles, tile->getRow(), tile->getColumn());
         }
-        auto isMine = [](const Tile* tile) {
-            return tile->isMine();
-        };
+        auto incrementTiles = surroundingTiles | std::views::filter([](const Tile* tile) {
+            return !tile->isMine();
+        });
         #ifdef PARALLEL_ALGORITHM
-        surroundingTiles.erase(
-            std::remove_if(std::execution::par_unseq, surroundingTiles.begin(), surroundingTiles.end(), isMine),
-            surroundingTiles.end());
-        std::for_each(std::execution::par_unseq, surroundingTiles.begin(), surroundingTiles.end(),
+        std::for_each(std::execution::par_unseq, incrementTiles.begin(), incrementTiles.end(),
                       [](Tile* tile) { tile->incrementSurroundingMines(); });
         #else
-        std::erase_if(surroundingTiles, isMine);
-        for (Tile* tile: surroundingTiles) {
+        for (Tile* tile: incrementTiles) {
             tile->incrementSurroundingMines();
         }
         #endif
