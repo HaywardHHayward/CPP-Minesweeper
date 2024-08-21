@@ -34,8 +34,12 @@ namespace Minesweeper {
     }
 
     Tile& Board::at(const std::uint8_t row, const std::uint8_t column) {
+        #ifdef NDEBUG
+        return m_board[gridToLinear(row, column)];
+        #else
         assert(row < m_rowAmount && column < m_columnAmount);
-        return m_board.at(gridToLinear(row, column));
+        return m_board.at(row * m_columnAmount + column);
+        #endif
     }
 
     void Board::checkTile(const std::uint8_t row, const std::uint8_t column) {
