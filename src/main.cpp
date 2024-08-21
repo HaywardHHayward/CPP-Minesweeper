@@ -23,6 +23,8 @@
 #endif
 
 int main() {
+void customInitialization(ftxui::ScreenInteractive& screen, std::shared_ptr<Minesweeper::Board>& board);
+
     using Minesweeper::Board, Minesweeper::BoardComponentBase, Minesweeper::BoardComponent;
     namespace tui = ftxui;
     try {
@@ -61,87 +63,11 @@ int main() {
                 case expert:
                     board = std::make_shared<Board>(16, 30, 99);
                     break;
-                case custom: {
-                    std::string rowStr, columnStr, mineStr;
-                    std::uint8_t row, column;
-                    std::uint16_t mines;
-
-                    const tui::InputOption rowOption{
-                        .placeholder{"Enter number of rows"},
-                        .multiline{false},
-                    };
-                    const tui::InputOption columnOption{
-                        .placeholder{"Enter number of columns"},
-                        .multiline{false},
-                    };
-                    const tui::InputOption mineOption{
-                        .placeholder{"Enter number of mines"},
-                        .multiline{false},
-                    };
-
-                    const tui::Component customInputs{
-                        tui::Container::Vertical({
-                            Input(&rowStr, rowOption) | tui::CatchEvent([](const tui::Event& event) {
-                                return event.is_character() && !std::isdigit(event.character()[0]);
-                            }) | tui::CatchEvent([&rowStr](const tui::Event& event) {
-                                return event.is_character() && rowStr.size() > std::numeric_limits<
-                                           std::uint8_t>::digits10;
-                            }),
-                            Input(&columnStr, columnOption) | tui::CatchEvent([](const tui::Event& event) {
-                                return event.is_character() && !std::isdigit(event.character()[0]);
-                            }) | tui::CatchEvent([&columnStr](const tui::Event& event) {
-                                return event.is_character() && columnStr.size() > std::numeric_limits<
-                                           std::uint8_t>::digits10;
-                            }),
-                            Input(&mineStr, mineOption) | tui::CatchEvent([](const tui::Event& event) {
-                                return event.is_character() && !std::isdigit(event.character()[0]);
-                            }) | tui::CatchEvent([&mineStr](const tui::Event& event) {
-                                return event.is_character() && mineStr.size() > std::numeric_limits<
-                                           std::uint16_t>::digits10;
-                            })
-                        })
-                    };
-
-                    auto clickFunction = [&] {
-                        if (rowStr.empty() || columnStr.empty() || mineStr.empty()) {
-                            return;
-                        }
-                        const unsigned long rowRaw{std::stoul(rowStr)}, columnRaw{std::stoul(columnStr)},
-                            minesRaw{std::stoul(mineStr)};
-                        if (rowRaw == 0 || rowRaw > UINT8_MAX
-                            || columnRaw == 0 || columnRaw > UINT8_MAX
-                            || minesRaw == 0 || minesRaw > UINT16_MAX) {
-                            if (rowRaw == 0 || rowRaw > UINT8_MAX) {
-                                rowStr.clear();
-                            }
-                            if (columnRaw == 0 || columnRaw > UINT8_MAX) {
-                                columnStr.clear();
-                            }
-                            if (minesRaw == 0 || minesRaw > UINT16_MAX) {
-                                mineStr.clear();
-                            }
-                            return;
-                        }
-                        if (minesRaw >= rowRaw * columnRaw) {
-                            mineStr.clear();
-                            return;
-                        }
-                        row = static_cast<std::uint8_t>(rowRaw);
-                        column = static_cast<std::uint8_t>(columnRaw);
-                        mines = static_cast<std::uint16_t>(minesRaw);
-                        screen.Exit();
-                    };
-                    tui::Component customButton = tui::Button({
-                        .label{"Enter row, column, and mine amounts."},
-                        .on_click{clickFunction}
-                    });
-                    const tui::Component customMenu{tui::Container::Vertical({customInputs, customButton})};
-                    screen.Loop(customMenu | tui::border | tui::center);
-                    board = std::make_shared<Board>(row, column, mines);
-                }
                 break;
                 default:
                     UNREACHABLE();
+                    case custom:
+                        customInitialization(screen, board);
             }
 
             const BoardComponent baseBoard{BoardComponentBase::Create(board, screen.ExitLoopClosure())};
@@ -275,4 +201,83 @@ int main() {
         std::cout << "An unhandled exception occurred, exiting program..." << std::endl;
         return EXIT_FAILURE;
     }
+}
+
+void customInitialization(ftxui::ScreenInteractive& screen, std::shared_ptr<Minesweeper::Board>& board) {
+    std::string rowStr, columnStr, mineStr;
+    std::uint8_t row, column;
+    std::uint16_t mines;
+
+    const ftxui::InputOption rowOption{
+        .placeholder{"Enter number of rows"},
+        .multiline{false},
+    };
+    const ftxui::InputOption columnOption{
+        .placeholder{"Enter number of columns"},
+        .multiline{false},
+    };
+    const ftxui::InputOption mineOption{
+        .placeholder{"Enter number of mines"},
+        .multiline{false},
+    };
+    const ftxui::Component customInputs{
+        ftxui::Container::Vertical({
+            Input(&rowStr, rowOption) | ftxui::CatchEvent([](const ftxui::Event& event) {
+                return event.is_character() && !std::isdigit(event.character()[0]);
+            }) | ftxui::CatchEvent([&rowStr](const ftxui::Event& event) {
+                return event.is_character() && rowStr.size() > std::numeric_limits<
+                           std::uint8_t>::digits10;
+            }),
+            Input(&columnStr, columnOption) | ftxui::CatchEvent([](const ftxui::Event& event) {
+                return event.is_character() && !std::isdigit(event.character()[0]);
+            }) | ftxui::CatchEvent([&columnStr](const ftxui::Event& event) {
+                return event.is_character() && columnStr.size() > std::numeric_limits<
+                           std::uint8_t>::digits10;
+            }),
+            Input(&mineStr, mineOption) | ftxui::CatchEvent([](const ftxui::Event& event) {
+                return event.is_character() && !std::isdigit(event.character()[0]);
+            }) | ftxui::CatchEvent([&mineStr](const ftxui::Event& event) {
+                return event.is_character() && mineStr.size() > std::numeric_limits<
+                           std::uint16_t>::digits10;
+            })
+        })
+    };
+
+    auto clickFunction = [&] {
+        if (rowStr.empty() || columnStr.empty() || mineStr.empty()) {
+            return;
+        }
+        const unsigned long rowRaw{std::stoul(rowStr)}, columnRaw{std::stoul(columnStr)},
+            minesRaw{std::stoul(mineStr)};
+        if (rowRaw == 0 || rowRaw > UINT8_MAX
+            || columnRaw == 0 || columnRaw > UINT8_MAX
+            || minesRaw == 0 || minesRaw >= UINT16_MAX) {
+            if (rowRaw == 0 || rowRaw > UINT8_MAX) {
+                rowStr.clear();
+            }
+            if (columnRaw == 0 || columnRaw > UINT8_MAX) {
+                columnStr.clear();
+            }
+            if (minesRaw == 0 || minesRaw >= UINT16_MAX) {
+                mineStr.clear();
+            }
+            return;
+        }
+        if (minesRaw >= rowRaw * columnRaw) {
+            mineStr.clear();
+            return;
+        }
+        row = static_cast<std::uint8_t>(rowRaw);
+        column = static_cast<std::uint8_t>(columnRaw);
+        mines = static_cast<std::uint16_t>(minesRaw);
+        screen.Exit();
+    };
+    ftxui::Component customButton = ftxui::Button({
+        .label{"Enter row, column, and mine amounts."},
+        .on_click{clickFunction}
+    });
+    const ftxui::Component customMenu{ftxui::Container::Vertical({customInputs, customButton})};
+    screen.Loop(customMenu | ftxui::border | ftxui::center);
+    screen.SetCursor({0, 0, ftxui::Screen::Cursor::Shape::Hidden});
+    board = std::make_shared<Minesweeper::Board>(row, column, mines);
 }
