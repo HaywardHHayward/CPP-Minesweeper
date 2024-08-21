@@ -1,6 +1,7 @@
 #include <chrono>
 #include <cstdint>
 #include <thread>
+#include <argparse/argparse.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 
 #include "Board.hpp"
@@ -22,52 +23,61 @@
 #define UINT16_MAX 0xffff
 #endif
 
-int main() {
 void customInitialization(ftxui::ScreenInteractive& screen, std::shared_ptr<Minesweeper::Board>& board);
 
+void parseArguments(int argc, char* argv[], std::shared_ptr<Minesweeper::Board>& board);
+
+int main(const int argc, char* argv[]) {
     using Minesweeper::Board, Minesweeper::BoardComponentBase, Minesweeper::BoardComponent;
     namespace tui = ftxui;
+    std::shared_ptr<Board> board{nullptr};
     try {
+        parseArguments(argc, argv, board);
+    } catch (...) {
+        return EXIT_FAILURE;
+    }
+    try {
+        tui::ScreenInteractive screen{tui::ScreenInteractive::Fullscreen()};
+        screen.SetCursor({0, 0, tui::Screen::Cursor::Shape::Hidden});
         while (true) {
-            tui::ScreenInteractive screen{tui::ScreenInteractive::Fullscreen()};
-            screen.SetCursor({0, 0, tui::Screen::Cursor::Shape::Hidden});
-            enum Difficulty: int {
-                beginner = 0,
-                intermediate = 1,
-                expert = 2,
-                custom = 3
-            };
-            Difficulty difficultySelection{custom};
-            const std::vector<std::string> difficultyEntries{"Beginner", "Intermediate", "Expert", "Custom"};
-            const tui::Component menu = tui::Menu(&difficultyEntries, std::bit_cast<int*>(&difficultySelection),
-                                                  {.on_enter{screen.ExitLoopClosure()}});
+            if (board == nullptr) {
+                enum Difficulty: int {
+                    beginner = 0,
+                    intermediate = 1,
+                    expert = 2,
+                    custom = 3
+                };
+                Difficulty difficultySelection{custom};
+                const std::vector<std::string> difficultyEntries{"Beginner", "Intermediate", "Expert", "Custom"};
+                const tui::Component menu = tui::Menu(&difficultyEntries, std::bit_cast<int*>(&difficultySelection),
+                                                      {.on_enter{screen.ExitLoopClosure()}});
 
-            tui::Component difficultyRender = Renderer(menu, [&menu] {
-                return tui::vbox({
-                           tui::text("Choose your difficulty"),
-                           tui::separator(),
-                           menu->Render()
-                       }) | tui::border
-                       | tui::center;
-            });
+                const tui::Component difficultyRender = Renderer(menu, [&menu] {
+                    return tui::vbox({
+                               tui::text("Choose your difficulty"),
+                               tui::separator(),
+                               menu->Render()
+                           }) | tui::border
+                           | tui::center;
+                });
 
-            screen.Loop(difficultyRender);
-            std::shared_ptr<Board> board{nullptr};
-            switch (difficultySelection) {
-                case beginner:
-                    board = std::make_shared<Board>(9, 9, 10);
-                    break;
-                case intermediate:
-                    board = std::make_shared<Board>(16, 16, 40);
-                    break;
-                case expert:
-                    board = std::make_shared<Board>(16, 30, 99);
-                    break;
-                break;
-                default:
-                    UNREACHABLE();
+                screen.Loop(difficultyRender);
+                switch (difficultySelection) {
+                    case beginner:
+                        board = std::make_shared<Board>(9, 9, 10);
+                        break;
+                    case intermediate:
+                        board = std::make_shared<Board>(16, 16, 40);
+                        break;
+                    case expert:
+                        board = std::make_shared<Board>(16, 30, 99);
+                        break;
                     case custom:
                         customInitialization(screen, board);
+                        break;
+                    default:
+                        UNREACHABLE();
+                }
             }
 
             const BoardComponent baseBoard{BoardComponentBase::Create(board, screen.ExitLoopClosure())};
@@ -85,7 +95,7 @@ void customInitialization(ftxui::ScreenInteractive& screen, std::shared_ptr<Mine
             const steadyClock::time_point startTime{steadyClock::now()};
             auto timeRenderer = [&startTime](
                 const steadyClock::time_point endTime = steadyClock::now()) {
-                return tui::Renderer([&] {
+                return tui::Renderer([&endTime, &startTime] {
                     namespace time = std::chrono;
                     const time::duration elapsedTime{endTime - startTime};
                     const bool isMaxedOut{elapsedTime > time::minutes(99) + time::seconds(59)};
@@ -117,10 +127,10 @@ void customInitialization(ftxui::ScreenInteractive& screen, std::shared_ptr<Mine
             #ifdef __cpp_lib_jthread
             using timerType = std::jthread;
             #define TIMER_ARGUMENT (const std::stop_token& stopToken)
-            auto timerPredicate = [] (const std::stop_token& stop) {
+            auto timerPredicate = [](const std::stop_token& stop) {
                 return stop.stop_requested();
             };
-            auto stopThread = [] (std::jthread& thread) {
+            auto stopThread = [](std::jthread& thread) {
                 thread.request_stop();
             };
             #else
@@ -160,7 +170,7 @@ void customInitialization(ftxui::ScreenInteractive& screen, std::shared_ptr<Mine
                                                 ? tui::text("You hit a mine! You lose!")
                                                 : tui::text("You flagged all the mines! You win!");
 
-            steadyClock::time_point endScreenTime{steadyClock::now()};
+            const steadyClock::time_point endScreenTime{steadyClock::now()};
             const tui::Element endInfo = tui::hbox({
                 countRenderer->Render(),
                 tui::filler(),
@@ -183,8 +193,9 @@ void customInitialization(ftxui::ScreenInteractive& screen, std::shared_ptr<Mine
 
             screen.Loop(endScreenRender);
             timerRefreshThread.join();
-            switch(endScreenSelection) {
+            switch (endScreenSelection) {
                 case retry:
+                    board.reset();
                     continue;
                 case exit:
                     return EXIT_SUCCESS;
@@ -280,4 +291,68 @@ void customInitialization(ftxui::ScreenInteractive& screen, std::shared_ptr<Mine
     screen.Loop(customMenu | ftxui::border | ftxui::center);
     screen.SetCursor({0, 0, ftxui::Screen::Cursor::Shape::Hidden});
     board = std::make_shared<Minesweeper::Board>(row, column, mines);
+}
+
+void parseArguments(const int argc, char* argv[], std::shared_ptr<Minesweeper::Board>& board) {
+    argparse::ArgumentParser parser("minesweeper", "", argparse::default_arguments::help);
+    parser.set_usage_max_line_width(80);
+    parser.set_usage_break_on_mutex();
+
+    auto& difficultyArguments{parser.add_mutually_exclusive_group()};
+    difficultyArguments.add_argument("--b", "--beginner").help("Creates a 9 x 9 board with 10 mines.").flag();
+    difficultyArguments.add_argument("--i", "--intermediate").help("Creates a 16 x 16 board with 40 mines.").flag();
+    difficultyArguments.add_argument("--e", "--expert").help("Creates a 16 x 30 board with 99 mines.").flag();
+    difficultyArguments.add_argument("--c", "--custom").help(
+                           "Creates a ROW x COLUMN with MINES mines. ROW and COLUMN must be less than 256, and MINES cannot be equal to or greater than ROW * COLUMN.")
+                       .metavar("ROW COLUMN MINES").nargs(3).scan<'u', unsigned long long>();
+
+    parser.add_description("A Minesweeper instance you can play in your terminal.");
+    parser.add_epilog("Providing no arguments will allow you to select the difficulty from the application itself.");
+
+    try {
+        parser.parse_args(argc, argv);
+        if (parser.is_used("--b")) {
+            board = std::make_shared<Minesweeper::Board>(9, 9, 10);
+            return;
+        }
+        if (parser.is_used("--i")) {
+            board = std::make_shared<Minesweeper::Board>(16, 16, 40);
+            return;
+        }
+        if (parser.is_used("--e")) {
+            board = std::make_shared<Minesweeper::Board>(16, 30, 99);
+            return;
+        }
+        if (parser.is_used("--c")) {
+            const auto arguments{parser.get<std::vector<unsigned long long> >("--c")};
+            const bool rowBigger{arguments[0] > UINT8_MAX}, columnBigger{arguments[1] > UINT8_MAX};
+            const bool minesBigger{arguments[2] >= arguments[0] * arguments[1]};
+            if (rowBigger || columnBigger || minesBigger) {
+                std::string errorMessage{"Invalid usage. "};
+                if (rowBigger) {
+                    errorMessage += "ROW";
+                }
+                if (columnBigger) {
+                    if (rowBigger) {
+                        errorMessage += " and ";
+                    }
+                    errorMessage += "COLUMN";
+                }
+                if (rowBigger || columnBigger) {
+                    errorMessage += " must be less than 256. ";
+                }
+                if (minesBigger) {
+                    errorMessage += "MINES must be less than ROW multiplied by COLUMN.";
+                }
+                throw std::invalid_argument(errorMessage);
+            }
+            board = std::make_shared<Minesweeper::Board>(static_cast<std::uint8_t>(arguments[0]),
+                                                         static_cast<std::uint8_t>(arguments[1]),
+                                                         static_cast<std::uint16_t>(arguments[2]));
+        }
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << "\n";
+        std::cerr << parser;
+        throw;
+    }
 }
