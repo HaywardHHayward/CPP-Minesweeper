@@ -25,7 +25,7 @@ namespace Minesweeper {
 
         void getSurroundingTiles(std::vector<Tile*>& vec, std::uint8_t row, std::uint8_t column);
         void generateMines(std::uint8_t row, std::uint8_t column);
-        [[nodiscard]] std::size_t gridToLinear(std::uint8_t row, std::uint8_t column) const;
+        [[nodiscard]] std::size_t gridToLinear(std::uint8_t row, std::uint8_t column) const noexcept;
 
     public:
         explicit Board(std::uint8_t rowAmount, std::uint8_t columnAmount, std::uint16_t mineCount);
@@ -33,8 +33,8 @@ namespace Minesweeper {
         [[nodiscard]] std::uint8_t getColumnAmount() const noexcept;
         [[nodiscard]] std::uint16_t getMineCount() const noexcept;
         [[nodiscard]] std::int32_t getRemainingMines() const noexcept;
-        [[nodiscard]] bool foundAllMines() const;
-        [[nodiscard]] bool hitMine() const;
+        [[nodiscard]] bool foundAllMines() const noexcept;
+        [[nodiscard]] bool hitMine() const noexcept;
         Tile& at(std::uint8_t row, std::uint8_t column);
         void checkTile(std::uint8_t row, std::uint8_t column);
         void toggleFlag(std::uint8_t row, std::uint8_t column) noexcept;
@@ -57,15 +57,15 @@ namespace Minesweeper {
         return m_mineCount - m_flagCount;
     }
 
-    inline bool Board::foundAllMines() const {
+    inline bool Board::foundAllMines() const noexcept {
         return m_uncheckedTiles == m_minedTiles;
     }
 
-    inline bool Board::hitMine() const {
+    inline bool Board::hitMine() const noexcept {
         return m_hitMine;
     }
 
-    inline std::size_t Board::gridToLinear(const std::uint8_t row, const std::uint8_t column) const {
+    inline std::size_t Board::gridToLinear(const std::uint8_t row, const std::uint8_t column) const noexcept {
         return row * m_columnAmount + column;
     }
 } // Minesweeper
