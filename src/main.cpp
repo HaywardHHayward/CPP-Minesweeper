@@ -25,9 +25,9 @@
 
 void customInitialization(ftxui::ScreenInteractive& screen, std::shared_ptr<Minesweeper::Board>& board);
 
-void parseArguments(int argc, char* argv[], std::shared_ptr<Minesweeper::Board>& board);
+void parseArguments(int argc, const char* const argv[], std::shared_ptr<Minesweeper::Board>& board);
 
-int main(const int argc, char* argv[]) {
+int main(const int argc, const char* const argv[]) {
     using Minesweeper::Board, Minesweeper::BoardComponentBase, Minesweeper::BoardComponent;
     namespace tui = ftxui;
     std::shared_ptr<Board> board{nullptr};
@@ -75,6 +75,8 @@ int main(const int argc, char* argv[]) {
                     case Difficulty::custom:
                         customInitialization(screen, board);
                         break;
+                    default:
+                        UNREACHABLE();
                 }
             }
 
@@ -122,40 +124,19 @@ int main(const int argc, char* argv[]) {
                        }) | tui::border | tui::center;
             });
 
-            #ifdef __cpp_lib_jthread
-            using timerType = std::jthread;
-            #define TIMER_ARGUMENT (const std::stop_token& stopToken)
-            auto timerPredicate = [](const std::stop_token& stop) {
-                return stop.stop_requested();
-            };
-            auto stopThread = [](std::jthread& thread) {
-                thread.request_stop();
-            };
-            #else
-            using timerType = std::thread;
-            #define TIMER_ARGUMENT
             std::atomic_bool stopToken{false};
-            auto timerPredicate = [](const std::atomic_bool& stop) {
-                return stop.load();
-            };
-            auto stopThread = [&stopToken]([[maybe_unused]] timerType& thread) {
-                stopToken.store(true);
-            };
-            #endif
-
             steadyClock::time_point nextTime{startTime + std::chrono::seconds(1)};
-            timerType timerRefreshThread([&] TIMER_ARGUMENT {
-                while (!timerPredicate(stopToken)) {
+            std::thread timerRefreshThread([&] {
+                while (!stopToken.load()) {
                     std::this_thread::sleep_until(nextTime);
-                    if (timerPredicate(stopToken)) {
-                        return;
-                    }
-                    screen.PostEvent(tui::Event::Custom);
                     nextTime += std::chrono::seconds(1);
+                    screen.PostEvent(tui::Event::Custom);
                 }
             });
+
             screen.Loop(gameplayRender);
-            stopThread(timerRefreshThread);
+
+            stopToken.store(true);
             const std::vector<std::string> endEntries{"Retry", "Exit"};
             enum class EndSelection : int {
                 retry = 0,
@@ -291,7 +272,7 @@ void customInitialization(ftxui::ScreenInteractive& screen, std::shared_ptr<Mine
     board = std::make_shared<Minesweeper::Board>(row, column, mines);
 }
 
-void parseArguments(const int argc, char* argv[], std::shared_ptr<Minesweeper::Board>& board) {
+void parseArguments(const int argc, const char* const argv[], std::shared_ptr<Minesweeper::Board>& board) {
     argparse::ArgumentParser parser("minesweeper", "", argparse::default_arguments::help);
     parser.set_usage_max_line_width(80);
     parser.set_usage_break_on_mutex();
@@ -351,6 +332,6 @@ void parseArguments(const int argc, char* argv[], std::shared_ptr<Minesweeper::B
     } catch (const std::exception& e) {
         std::cerr << e.what() << "\n";
         std::cerr << parser;
-        throw;
+        throw; // throws the exception back into main where all destructors can be called safely
     }
 }
