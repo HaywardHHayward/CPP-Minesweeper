@@ -24,6 +24,7 @@ add_executable(Minesweeper src/main.cpp
         src/TileComponentBase.cpp
         src/BoardComponentBase.cpp)
 
+
 target_link_libraries(Minesweeper
         PRIVATE ftxui::component
         PRIVATE ftxui::dom

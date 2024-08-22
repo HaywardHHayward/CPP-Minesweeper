@@ -41,13 +41,13 @@ int main(const int argc, char* argv[]) {
         screen.SetCursor({0, 0, tui::Screen::Cursor::Shape::Hidden});
         while (true) {
             if (board == nullptr) {
-                enum Difficulty: int {
+                enum class Difficulty: int {
                     beginner = 0,
                     intermediate = 1,
                     expert = 2,
                     custom = 3
                 };
-                Difficulty difficultySelection{custom};
+                Difficulty difficultySelection{Difficulty::custom};
                 const std::vector<std::string> difficultyEntries{"Beginner", "Intermediate", "Expert", "Custom"};
                 const tui::Component menu = tui::Menu(&difficultyEntries, std::bit_cast<int*>(&difficultySelection),
                                                       {.on_enter{screen.ExitLoopClosure()}});
@@ -63,20 +63,18 @@ int main(const int argc, char* argv[]) {
 
                 screen.Loop(difficultyRender);
                 switch (difficultySelection) {
-                    case beginner:
+                    case Difficulty::beginner:
                         board = std::make_shared<Board>(9, 9, 10);
                         break;
-                    case intermediate:
+                    case Difficulty::intermediate:
                         board = std::make_shared<Board>(16, 16, 40);
                         break;
-                    case expert:
+                    case Difficulty::expert:
                         board = std::make_shared<Board>(16, 30, 99);
                         break;
-                    case custom:
+                    case Difficulty::custom:
                         customInitialization(screen, board);
                         break;
-                    default:
-                        UNREACHABLE();
                 }
             }
 
@@ -159,11 +157,11 @@ int main(const int argc, char* argv[]) {
             screen.Loop(gameplayRender);
             stopThread(timerRefreshThread);
             const std::vector<std::string> endEntries{"Retry", "Exit"};
-            enum EndSelection : int {
+            enum class EndSelection : int {
                 retry = 0,
                 exit = 1
             };
-            EndSelection endScreenSelection{exit};
+            EndSelection endScreenSelection{EndSelection::exit};
             const tui::Component endMenu = tui::Menu(&endEntries, std::bit_cast<int*>(&endScreenSelection),
                                                      {.on_enter = screen.ExitLoopClosure()});
             const tui::Element endMessage = board->hitMine()
@@ -194,10 +192,10 @@ int main(const int argc, char* argv[]) {
             screen.Loop(endScreenRender);
             timerRefreshThread.join();
             switch (endScreenSelection) {
-                case retry:
+                case EndSelection::retry:
                     board.reset();
                     continue;
-                case exit:
+                case EndSelection::exit:
                     return EXIT_SUCCESS;
                 default:
                     UNREACHABLE();
