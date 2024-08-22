@@ -1,6 +1,7 @@
 #ifndef BOARD_HPP
 #define BOARD_HPP
 
+#include <BS_thread_pool.hpp>
 #include <cstdint>
 #include <deque>
 #include <mutex>
@@ -12,6 +13,7 @@
 
 namespace Minesweeper {
     class Board final {
+        inline static BS::thread_pool m_threadPool{BS::thread_pool()};
         std::deque<std::mutex> m_tileLocks;
         std::unordered_set<Tile*> m_minedTiles;
         std::unordered_set<Tile*> m_uncheckedTiles;
@@ -28,6 +30,10 @@ namespace Minesweeper {
         [[nodiscard]] std::size_t gridToLinear(std::uint8_t row, std::uint8_t column) const noexcept;
 
     public:
+        ~Board() {
+            m_threadPool.purge();
+        }
+
         explicit Board(std::uint8_t rowAmount, std::uint8_t columnAmount, std::uint16_t mineCount);
         [[nodiscard]] std::uint8_t getRowAmount() const noexcept;
         [[nodiscard]] std::uint8_t getColumnAmount() const noexcept;
