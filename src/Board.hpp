@@ -1,6 +1,6 @@
 #ifndef BOARD_HPP
 #define BOARD_HPP
-
+#include <BS_thread_pool.hpp> // https://github.com/bshoshany/thread-pool
 #include <cstdint>
 #include <deque>
 #include <mutex>
@@ -12,10 +12,12 @@
 
 namespace Minesweeper {
     class Board final {
+        BS::thread_pool m_threadPool{BS::thread_pool()};
         std::deque<std::mutex> m_tileLocks;
         std::unordered_set<Tile*> m_minedTiles;
         std::unordered_set<Tile*> m_uncheckedTiles;
         std::vector<Tile> m_board;
+        std::mutex m_uncheckedMutex{};
         std::uint16_t m_mineCount;
         std::uint16_t m_flagCount{0};
         const std::uint8_t m_rowAmount;
@@ -36,7 +38,7 @@ namespace Minesweeper {
         [[nodiscard]] bool foundAllMines() const noexcept;
         [[nodiscard]] bool hitMine() const noexcept;
         Tile& at(std::uint8_t row, std::uint8_t column);
-        void checkTile(std::uint8_t row, std::uint8_t column);
+        void checkTile(std::uint8_t row, std::uint8_t column, bool topCheck = true);
         void toggleFlag(std::uint8_t row, std::uint8_t column) noexcept;
         void clearSafeTiles(std::uint8_t row, std::uint8_t column);
     };

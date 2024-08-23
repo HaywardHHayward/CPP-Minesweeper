@@ -38,6 +38,9 @@ namespace Minesweeper {
         for (const ftxui::Component& child: children_) {
             child->OnEvent(event);
         }
+        if (m_board->foundAllMines() || m_board->hitMine()) {
+            m_exit();
+        }
         if (!m_hovered || !event.is_mouse()) {
             return false;
         }
@@ -70,9 +73,6 @@ namespace Minesweeper {
                 break;
             default:
                 break;
-        }
-        if (m_board->foundAllMines() || m_board->hitMine()) {
-            m_exit();
         }
         return true;
     }
