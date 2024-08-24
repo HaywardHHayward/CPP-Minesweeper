@@ -28,8 +28,11 @@ namespace Minesweeper {
         m_board.reserve(rowAmount * columnAmount);
         for (std::uint_fast8_t row{0}; row < rowAmount; row++) {
             for (std::uint_fast8_t col{0}; col < columnAmount; col++) {
-                m_uncheckedTiles.insert(&m_board.emplace_back(row, col));
+                m_board.emplace_back(row, col);
             }
+        }
+        for (Tile& tile: m_board) {
+            m_uncheckedTiles.insert(&tile);
         }
     }
 
@@ -165,12 +168,12 @@ namespace Minesweeper {
     }
 
     void Board::generateMines(const std::uint8_t row, const std::uint8_t column) {
-        std::vector<Tile*> surroundingTiles;
-        surroundingTiles.reserve(8);
-        getSurroundingTiles(surroundingTiles, row, column);
         std::vector<Tile*> possibleTiles;
         std::ranges::transform(m_board, std::back_inserter(possibleTiles), [](Tile& tile) { return &tile; });
         std::erase(possibleTiles, &at(row, column));
+        std::vector<Tile*> surroundingTiles;
+        surroundingTiles.reserve(8);
+        getSurroundingTiles(surroundingTiles, row, column);
         if (m_mineCount < m_rowAmount * m_columnAmount - surroundingTiles.size()) [[likely]] {
             auto contains = [](auto& range, auto value) {
                 return std::ranges::find(range, value) != std::ranges::end(range);
@@ -204,16 +207,11 @@ namespace Minesweeper {
         for (const Tile* tile: m_minedTiles) {
             getSurroundingTiles(surroundingTiles, tile->getRow(), tile->getColumn());
         }
-        auto incrementTiles = surroundingTiles | std::views::filter([](const Tile* tile) {
+        auto nonMinedTiles = surroundingTiles | std::views::filter([](const Tile* tile) {
             return !tile->isMine();
         });
-        #ifdef PARALLEL_ALGORITHM
-        std::for_each(std::execution::par_unseq, incrementTiles.begin(), incrementTiles.end(),
-                      [](Tile* tile) { tile->incrementSurroundingMines(); });
-        #else
-        for (Tile* tile: incrementTiles) {
+        for (Tile* tile: nonMinedTiles) {
             tile->incrementSurroundingMines();
         }
-        #endif
     }
 } // Minesweeper

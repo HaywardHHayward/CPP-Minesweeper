@@ -18,8 +18,8 @@ namespace Minesweeper {
         std::unordered_set<Tile*> m_uncheckedTiles;
         std::vector<Tile> m_board;
         std::mutex m_uncheckedMutex{};
-        std::uint16_t m_mineCount;
         std::uint16_t m_flagCount{0};
+        const std::uint16_t m_mineCount;
         const std::uint8_t m_rowAmount;
         const std::uint8_t m_columnAmount;
         bool m_firstCheck{true};
