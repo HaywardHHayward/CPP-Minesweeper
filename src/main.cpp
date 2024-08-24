@@ -16,13 +16,6 @@
 #define UNREACHABLE() unreachable()
 #endif
 
-#ifndef UINT8_MAX
-#define UINT8_MAX 0xff
-#endif
-#ifndef UINT16_MAX
-#define UINT16_MAX 0xffff
-#endif
-
 void customInitialization(ftxui::ScreenInteractive& screen, std::shared_ptr<Minesweeper::Board>& board);
 
 void parseArguments(int argc, const char* const argv[], std::shared_ptr<Minesweeper::Board>& board);
@@ -279,7 +272,7 @@ void parseArguments(const int argc, const char* const argv[], std::shared_ptr<Mi
     difficultyArguments.add_argument("--e", "--expert").help("Creates a 16 x 30 board with 99 mines.").flag();
     difficultyArguments.add_argument("--c", "--custom").help(
                            "Creates a ROW x COLUMN with MINES mines. ROW and COLUMN must be less than 256, and MINES cannot be equal to or greater than ROW * COLUMN.")
-                       .metavar("ROW COLUMN MINES").nargs(3).scan<'u', unsigned long long>();
+                       .metavar("ROW COLUMN MINES").nargs(3);
 
     parser.add_description("A Minesweeper instance you can play in your terminal.");
     parser.add_epilog("Providing no arguments will allow you to select the difficulty from the application itself.");
@@ -299,28 +292,58 @@ void parseArguments(const int argc, const char* const argv[], std::shared_ptr<Mi
             return;
         }
         if (parser.is_used("--c")) {
-            const auto arguments{parser.get<std::vector<unsigned long long> >("--c")};
-            const bool rowBigger{arguments[0] > UINT8_MAX}, columnBigger{arguments[1] > UINT8_MAX};
-            const bool minesBigger{arguments[2] >= arguments[0] * arguments[1]};
-            if (rowBigger || columnBigger || minesBigger) {
-                std::string errorMessage{"Invalid usage. "};
-                if (rowBigger) {
-                    errorMessage += "ROW";
-                }
-                if (columnBigger) {
-                    if (rowBigger) {
-                        errorMessage += " and ";
-                    }
-                    errorMessage += "COLUMN";
-                }
-                if (rowBigger || columnBigger) {
-                    errorMessage += " must be less than 256. ";
-                }
-                if (minesBigger) {
-                    errorMessage += "MINES must be less than ROW multiplied by COLUMN.";
-                }
-                throw std::invalid_argument(errorMessage);
+            auto stringArguments{parser.get<std::vector<std::string> >("--c")};
+            auto isNotPositiveNumber = [](const std::string_view& string) {
+                return std::ranges::any_of(string, [](const unsigned char& ch) {
+                    return !std::isdigit(ch);
+                });
+            };
+            if (std::ranges::any_of(stringArguments, isNotPositiveNumber)) {
+                throw std::logic_error("Invalid usage. ROW, COLUMN, and MINES must all be a positive number");
             }
+            auto isAllZero = [](const std::string_view& string) {
+                return string.find_first_not_of('0') == std::string_view::npos;
+            };
+            if (std::ranges::any_of(stringArguments, isAllZero)) {
+                throw std::logic_error("Invalid usage. ROW, COLUMN, and MINES cannot be zero");
+            }
+            auto removeLeadingZeros = [](std::string& string) {
+                string = string.substr(string.find_first_not_of('0'));
+            };
+            std::ranges::for_each(stringArguments, removeLeadingZeros);
+            auto validate = [](const bool row, const bool column, const bool mines) {
+                if (row || column || mines) {
+                    std::string errorMessage{"Invalid usage. "};
+                    if (row) {
+                        errorMessage += "ROW";
+                    }
+                    if (column) {
+                        if (row) {
+                            errorMessage += " and ";
+                        }
+                        errorMessage += "COLUMN";
+                    }
+                    if (row || column) {
+                        errorMessage += " must be less than 256. ";
+                    }
+                    if (mines) {
+                        errorMessage += "MINES must be less than ROW multiplied by COLUMN.";
+                    }
+                    throw std::invalid_argument(errorMessage);
+                }
+            };
+            const bool rowTooLong{stringArguments[0].length() >= std::numeric_limits<unsigned long>::digits10};
+            const bool columnTooLong{stringArguments[1].length() >= std::numeric_limits<unsigned long>::digits10};
+            const bool minesTooLong{stringArguments[2].length() >= std::numeric_limits<unsigned long>::digits10};
+            validate(rowTooLong, columnTooLong, minesTooLong);
+            std::array<unsigned long, 3> arguments{};
+            std::ranges::transform(stringArguments, std::begin(arguments), [](const std::string& string) {
+                return std::stoul(string);
+            });
+            const bool rowBigger{arguments[0] > UINT8_MAX};
+            const bool columnBigger{arguments[1] > UINT8_MAX};
+            const bool minesBigger{arguments[2] >= arguments[0] * arguments[1]};
+            validate(rowBigger, columnBigger, minesBigger);
             board = std::make_shared<Minesweeper::Board>(static_cast<std::uint8_t>(arguments[0]),
                                                          static_cast<std::uint8_t>(arguments[1]),
                                                          static_cast<std::uint16_t>(arguments[2]));
