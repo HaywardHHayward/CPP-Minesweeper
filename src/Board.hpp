@@ -27,6 +27,7 @@ namespace Minesweeper {
 
         void getSurroundingTiles(std::vector<Tile*>& vec, std::uint8_t row, std::uint8_t column);
         void generateMines(std::uint8_t row, std::uint8_t column);
+        void threadedCheckTile(std::uint8_t row, std::uint8_t column);
         [[nodiscard]] std::size_t gridToLinear(std::uint8_t row, std::uint8_t column) const noexcept;
 
     public:
@@ -38,7 +39,7 @@ namespace Minesweeper {
         [[nodiscard]] bool foundAllMines() const noexcept;
         [[nodiscard]] bool hitMine() const noexcept;
         Tile& at(std::uint8_t row, std::uint8_t column);
-        void checkTile(std::uint8_t row, std::uint8_t column, bool topCheck = true);
+        void checkTile(std::uint8_t row, std::uint8_t column);
         void toggleFlag(std::uint8_t row, std::uint8_t column) noexcept;
         void clearSafeTiles(std::uint8_t row, std::uint8_t column);
     };

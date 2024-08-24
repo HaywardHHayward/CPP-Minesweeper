@@ -42,12 +42,7 @@ namespace Minesweeper {
         #endif
     }
 
-    void Board::checkTile(const std::uint8_t row, const std::uint8_t column, const bool topCheck) {
-        const std::unique_lock tileLock{m_tileLocks.at(gridToLinear(row, column)), std::try_to_lock};
-        if (!tileLock.owns_lock()) {
-            // if another thread is running checkTile on this tile, just return
-            return;
-        }
+    void Board::checkTile(const std::uint8_t row, const std::uint8_t column) {
         Tile& tile{at(row, column)};
         if (tile.isFlagged()) {
             return;
@@ -59,23 +54,58 @@ namespace Minesweeper {
         if (tile.isChecked() || tile.isFlagged()) {
             return;
         }
+        tile.becomeChecked();
+        m_uncheckedTiles.erase(&tile);
+        if (tile.isMine()) {
+            m_hitMine = true;
+            return;
+        }
+        if (tile.getSurroundingMines() == 0) {
+            #ifdef NDEBUG
+            const std::lock_guard tileLock{m_tileLocks[gridToLinear(row, column)]};
+            #else
+            const std::lock_guard tileLock{m_tileLocks.at(gridToLinear(row, column))};
+            #endif
+            std::vector<Tile*> surroundingTiles;
+            getSurroundingTiles(surroundingTiles, row, column);
+            for (const Tile* sTile: surroundingTiles) {
+                m_threadPool.detach_task([this, sTile] {
+                    threadedCheckTile(sTile->getRow(), sTile->getColumn());
+                });
+            }
+            m_threadPool.wait();
+        }
+    }
+
+    void Board::threadedCheckTile(const std::uint8_t row, const std::uint8_t column) {
+        #ifdef NDEBUG
+        const std::unique_lock tileLock{m_tileLocks[gridToLinear(row, column)], std::try_to_lock};
+        #else
+        const std::unique_lock tileLock{m_tileLocks.at(gridToLinear(row, column)), std::try_to_lock};
+        #endif
+        if (!tileLock.owns_lock()) {
+            // if another thread is running checkTile on this tile, just return
+            return;
+        }
+        Tile& tile{at(row, column)};
+        if (tile.isChecked() || tile.isFlagged()) {
+            return;
+        }
         tile.becomeChecked(); {
             std::lock_guard uncheckedLock{m_uncheckedMutex};
             m_uncheckedTiles.erase(&tile);
         }
         if (tile.isMine()) {
             m_hitMine = true;
+            return;
         }
-        if (tile.getSurroundingMines() == 0 && !tile.isMine()) {
+        if (tile.getSurroundingMines() == 0) {
             std::vector<Tile*> surroundingTiles;
             getSurroundingTiles(surroundingTiles, row, column);
             for (const Tile* sTile: surroundingTiles) {
                 m_threadPool.detach_task([this, sTile] {
-                    checkTile(sTile->getRow(), sTile->getColumn(), false);
+                    threadedCheckTile(sTile->getRow(), sTile->getColumn());
                 });
-            }
-            if (topCheck) {
-                m_threadPool.wait();
             }
         }
     }
@@ -110,7 +140,7 @@ namespace Minesweeper {
         if (uncheckedTiles.size() - trueUncheckedTiles.size() == safeTile.getSurroundingMines()) {
             for (const Tile* tile: trueUncheckedTiles) {
                 m_threadPool.detach_task([this, tile] {
-                    checkTile(tile->getRow(), tile->getColumn(), false);
+                    threadedCheckTile(tile->getRow(), tile->getColumn());
                 });
             }
             m_threadPool.wait();
