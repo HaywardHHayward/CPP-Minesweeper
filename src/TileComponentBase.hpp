@@ -5,6 +5,8 @@
 
 namespace Minesweeper {
     class Tile;
+    class TileComponentBase;
+    using TileComponent = std::shared_ptr<TileComponentBase>;
 
     class TileComponentBase final : public ftxui::ComponentBase {
         friend class BoardComponentBase;
@@ -14,7 +16,7 @@ namespace Minesweeper {
 
     public:
         explicit TileComponentBase(Tile& tile) noexcept;
-        static std::shared_ptr<TileComponentBase> Create(Tile& tile);
+        static TileComponent Create(Tile& tile);
         [[nodiscard]] std::pair<std::uint8_t, std::uint8_t> getCoordinates() const noexcept;
         ftxui::Element Render() override;
         [[nodiscard]] constexpr bool Focusable() const override;
@@ -24,11 +26,9 @@ namespace Minesweeper {
         return m_coords;
     }
 
-    inline std::shared_ptr<TileComponentBase> TileComponentBase::Create(Tile& tile) {
+    inline TileComponent TileComponentBase::Create(Tile& tile) {
         return std::make_shared<TileComponentBase>(tile);
     }
-
-    using TileComponent = std::shared_ptr<TileComponentBase>;
 } // Minesweeper
 
 #endif //TILECOMPONENT_HPP

@@ -81,7 +81,7 @@ int main(const int argc, const char* const argv[]) {
             }
 
             const BoardComponent baseBoard{BoardComponentBase::Create(board, screen.ExitLoopClosure())};
-            const tui::Component boardComponent{Hoverable(baseBoard, baseBoard->hovered())};
+            const tui::Component boardComponent{Hoverable(baseBoard, &baseBoard->hovered)};
             const tui::Component boardRenderer = Renderer(boardComponent, [&boardComponent] {
                 return boardComponent->Render() | tui::border;
             });

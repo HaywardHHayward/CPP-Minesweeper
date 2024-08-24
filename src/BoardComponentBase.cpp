@@ -9,7 +9,7 @@ namespace Minesweeper {
     BoardComponentBase::BoardComponentBase(const std::shared_ptr<Board>& board, ftxui::Closure exit): ComponentBase(),
         m_exit{std::move(exit)},
         m_board{board},
-        m_hovered{false} {
+        hovered{false} {
         for (std::uint_fast8_t row{0}; row < board->getRowAmount(); row++) {
             for (std::uint_fast8_t col{0}; col < board->getColumnAmount(); col++) {
                 TileComponent child{TileComponentBase::Create(board->at(row, col))};
@@ -41,7 +41,7 @@ namespace Minesweeper {
         if (m_board->foundAllMines() || m_board->hitMine()) {
             m_exit();
         }
-        if (!m_hovered || !event.is_mouse()) {
+        if (!hovered || !event.is_mouse()) {
             return false;
         }
         auto [button, motion, shift, meta, control, x, y]{event.mouse()};
@@ -49,15 +49,16 @@ namespace Minesweeper {
             if (child->ActiveChild() == nullptr) {
                 return false;
             }
-            const std::shared_ptr<TileComponentBase> possibleCast = std::dynamic_pointer_cast<TileComponentBase>(
+            const TileComponent possibleCast = std::dynamic_pointer_cast<TileComponentBase>(
                 child->ActiveChild());
             return possibleCast != nullptr && possibleCast->m_hovered;
         };
-        const auto it{std::ranges::find_if(std::as_const(children_), isHovered)};
-        if (it == children_.end()) {
+        const auto hoveredTile{std::ranges::find_if(children_, isHovered)};
+        if (hoveredTile == children_.end()) {
             return false;
         }
-        auto [row, column] = std::static_pointer_cast<TileComponentBase>((*it)->ActiveChild())->getCoordinates();
+        auto [row, column] = std::static_pointer_cast<TileComponentBase>((*hoveredTile)->ActiveChild())->
+            getCoordinates();
         if (motion != ftxui::Mouse::Motion::Released) {
             return true;
         }
@@ -79,10 +80,6 @@ namespace Minesweeper {
 
     ftxui::Component BoardComponentBase::ActiveChild() {
         return ComponentBase::ActiveChild();
-    }
-
-    constexpr bool BoardComponentBase::Focusable() const {
-        return true;
     }
 
     void BoardComponentBase::SetActiveChild(ComponentBase* child) {
