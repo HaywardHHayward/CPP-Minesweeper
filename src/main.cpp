@@ -241,20 +241,16 @@ void customInitialization(ftxui::ScreenInteractive& screen, std::shared_ptr<Mine
             minesRaw{std::stoul(mineStr)};
         if (rowRaw == 0 || rowRaw > UINT8_MAX
             || columnRaw == 0 || columnRaw > UINT8_MAX
-            || minesRaw == 0 || minesRaw >= UINT16_MAX) {
+            || minesRaw == 0 || minesRaw >= rowRaw * columnRaw) {
             if (rowRaw == 0 || rowRaw > UINT8_MAX) {
                 rowStr.clear();
             }
             if (columnRaw == 0 || columnRaw > UINT8_MAX) {
                 columnStr.clear();
             }
-            if (minesRaw == 0 || minesRaw >= UINT16_MAX) {
+            if (minesRaw == 0 || minesRaw >= rowRaw * columnRaw) {
                 mineStr.clear();
             }
-            return;
-        }
-        if (minesRaw >= rowRaw * columnRaw) {
-            mineStr.clear();
             return;
         }
         row = static_cast<std::uint8_t>(rowRaw);
