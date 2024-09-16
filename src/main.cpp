@@ -34,28 +34,28 @@ int main(const int argc, const char* const argv[]) {
         screen.SetCursor({0, 0, tui::Screen::Cursor::Shape::Hidden});
         while (true) {
             if (board == nullptr) {
+                int difficultySelection{-1};
+                const std::vector<std::string> difficultyEntries{"Beginner", "Intermediate", "Expert", "Custom"};
+                const tui::Component difficultyMenu = tui::Menu(&difficultyEntries, &difficultySelection,
+                                                                {.on_enter{screen.ExitLoopClosure()}});
+
+                const tui::Component difficultyRender = Renderer(difficultyMenu, [&difficultyMenu] {
+                    return tui::vbox({
+                               tui::text("Choose your difficulty"),
+                               tui::separator(),
+                               difficultyMenu->Render()
+                           }) | tui::border
+                           | tui::center;
+                });
+
+                screen.Loop(difficultyRender);
                 enum class Difficulty: int {
                     beginner = 0,
                     intermediate = 1,
                     expert = 2,
                     custom = 3
                 };
-                Difficulty difficultySelection{Difficulty::custom};
-                const std::vector<std::string> difficultyEntries{"Beginner", "Intermediate", "Expert", "Custom"};
-                const tui::Component menu = tui::Menu(&difficultyEntries, std::bit_cast<int*>(&difficultySelection),
-                                                      {.on_enter{screen.ExitLoopClosure()}});
-
-                const tui::Component difficultyRender = Renderer(menu, [&menu] {
-                    return tui::vbox({
-                               tui::text("Choose your difficulty"),
-                               tui::separator(),
-                               menu->Render()
-                           }) | tui::border
-                           | tui::center;
-                });
-
-                screen.Loop(difficultyRender);
-                switch (difficultySelection) {
+                switch (static_cast<Difficulty>(difficultySelection)) {
                     case Difficulty::beginner:
                         board = std::make_shared<Board>(9, 9, 10);
                         break;
@@ -68,8 +68,8 @@ int main(const int argc, const char* const argv[]) {
                     case Difficulty::custom:
                         customInitialization(screen, board);
                         break;
-                    default:
-                        UNREACHABLE();
+                    [[unlikely]] default:
+                        throw std::out_of_range("Difficulty selection out of range");
                 }
             }
 
@@ -131,12 +131,8 @@ int main(const int argc, const char* const argv[]) {
 
             stopToken.store(true);
             const std::vector<std::string> endEntries{"Retry", "Exit"};
-            enum class EndSelection : int {
-                retry = 0,
-                exit = 1
-            };
-            EndSelection endScreenSelection{EndSelection::exit};
-            const tui::Component endMenu = tui::Menu(&endEntries, std::bit_cast<int*>(&endScreenSelection),
+            int endScreenSelection{-1};
+            const tui::Component endMenu = tui::Menu(&endEntries, &endScreenSelection,
                                                      {.on_enter = screen.ExitLoopClosure()});
             const tui::Element endMessage = board->hitMine()
                                                 ? tui::text("You hit a mine! You lose!")
@@ -165,14 +161,18 @@ int main(const int argc, const char* const argv[]) {
 
             screen.Loop(endScreenRender);
             timerRefreshThread.join();
-            switch (endScreenSelection) {
+            enum class EndSelection : int {
+                retry = 0,
+                exit = 1
+            };
+            switch (static_cast<EndSelection>(endScreenSelection)) {
                 case EndSelection::retry:
                     board.reset();
                     continue;
                 case EndSelection::exit:
                     return EXIT_SUCCESS;
-                default:
-                    UNREACHABLE();
+                [[unlikely]] default:
+                    throw std::out_of_range("EndSelection out of range");
             }
         }
     } catch (const std::exception& e) {
