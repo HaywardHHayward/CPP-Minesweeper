@@ -38,7 +38,7 @@ namespace Minesweeper {
         [[nodiscard]] std::int32_t getRemainingMines() const noexcept;
         [[nodiscard]] bool foundAllMines() const noexcept;
         [[nodiscard]] bool hitMine() const noexcept;
-        Tile& at(std::uint8_t row, std::uint8_t column);
+        Tile& atCoordinate(std::uint8_t row, std::uint8_t column);
         void checkTile(std::uint8_t row, std::uint8_t column);
         void toggleFlag(std::uint8_t row, std::uint8_t column) noexcept;
         void clearSafeTiles(std::uint8_t row, std::uint8_t column);

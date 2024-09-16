@@ -12,7 +12,7 @@ namespace Minesweeper {
         hovered{false} {
         for (std::uint_fast8_t row{0}; row < board->getRowAmount(); row++) {
             for (std::uint_fast8_t col{0}; col < board->getColumnAmount(); col++) {
-                TileComponent child{TileComponentBase::Create(board->at(row, col))};
+                TileComponent child{TileComponentBase::Create(board->atCoordinate(row, col))};
                 Add(Hoverable(child, &child->m_hovered));
             }
         }
@@ -29,7 +29,7 @@ namespace Minesweeper {
             }
             renderElements.push_back(std::move(rowOfElements));
         }
-        ftxui::Table table(renderElements);
+        ftxui::Table table(std::move(renderElements));
         table.SelectAll().SeparatorVertical(ftxui::EMPTY);
         return table.Render();
     }

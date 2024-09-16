@@ -36,7 +36,7 @@ namespace Minesweeper {
         }
     }
 
-    Tile& Board::at(const std::uint8_t row, const std::uint8_t column) {
+    Tile& Board::atCoordinate(const std::uint8_t row, const std::uint8_t column) {
         #ifdef NDEBUG
         return m_board[gridToLinear(row, column)];
         #else
@@ -46,7 +46,7 @@ namespace Minesweeper {
     }
 
     void Board::checkTile(const std::uint8_t row, const std::uint8_t column) {
-        Tile& tile{at(row, column)};
+        Tile& tile{atCoordinate(row, column)};
         if (tile.isFlagged()) {
             return;
         }
@@ -90,7 +90,7 @@ namespace Minesweeper {
             // if another thread is running checkTile on this tile, just return
             return;
         }
-        Tile& tile{at(row, column)};
+        Tile& tile{atCoordinate(row, column)};
         if (tile.isChecked() || tile.isFlagged()) {
             return;
         }
@@ -114,7 +114,7 @@ namespace Minesweeper {
     }
 
     void Board::toggleFlag(const std::uint8_t row, const std::uint8_t column) noexcept {
-        Tile& tile{at(row, column)};
+        Tile& tile{atCoordinate(row, column)};
         if (tile.isChecked()) {
             return;
         }
@@ -127,7 +127,7 @@ namespace Minesweeper {
     }
 
     void Board::clearSafeTiles(const std::uint8_t row, const std::uint8_t column) {
-        const Tile& safeTile{at(row, column)};
+        const Tile& safeTile{atCoordinate(row, column)};
         if (!safeTile.isChecked() || safeTile.getSurroundingMines() == 0) {
             return;
         }
@@ -162,7 +162,7 @@ namespace Minesweeper {
                 if (c == 0 && r == 0) {
                     continue;
                 }
-                vec.push_back(&at(row + r, column + c));
+                vec.push_back(&atCoordinate(row + r, column + c));
             }
         }
     }
@@ -170,7 +170,7 @@ namespace Minesweeper {
     void Board::generateMines(const std::uint8_t row, const std::uint8_t column) {
         std::vector<Tile*> possibleTiles;
         std::ranges::transform(m_board, std::back_inserter(possibleTiles), [](Tile& tile) { return &tile; });
-        std::erase(possibleTiles, &at(row, column));
+        std::erase(possibleTiles, &atCoordinate(row, column));
         std::vector<Tile*> surroundingTiles;
         surroundingTiles.reserve(8);
         getSurroundingTiles(surroundingTiles, row, column);
@@ -196,11 +196,14 @@ namespace Minesweeper {
             #else
             const std::size_t randIndex{std::uniform_int_distribution<std::size_t>(0, cachedSize - (i + 1))(rng)};
             #endif
+            #ifdef NDEBUG
+            Tile* randTile{possibleTiles[randIndex]};
+            #else
             Tile* randTile{possibleTiles.at(randIndex)};
+            #endif
             m_minedTiles.insert(randTile);
             randTile->becomeMine();
-            std::ignore = std::ranges::remove(possibleTiles, randTile);
-            // will essentially erase randTile from possibleTiles without having to reallocate possibleTiles
+            std::erase(possibleTiles, randTile);
         }
         surroundingTiles.clear();
         surroundingTiles.reserve(8 * m_mineCount); // maximum amount of tiles that could surround all the mines

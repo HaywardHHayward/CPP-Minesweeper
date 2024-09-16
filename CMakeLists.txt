@@ -20,9 +20,14 @@ FetchContent_MakeAvailable(argparse)
 include_directories(lib)
 
 add_executable(Minesweeper src/main.cpp
+        src/Tile.hpp
         src/Board.cpp
+        src/Board.hpp
         src/TileComponentBase.cpp
-        src/BoardComponentBase.cpp)
+        src/TileComponentBase.hpp
+        src/BoardComponentBase.cpp
+        src/BoardComponentBase.hpp
+)
 
 
 target_link_libraries(Minesweeper
