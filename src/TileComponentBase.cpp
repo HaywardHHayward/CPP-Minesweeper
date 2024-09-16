@@ -22,33 +22,33 @@ namespace Minesweeper {
         using namespace ftxui;
         if (!m_tile.isChecked()) {
             if (m_tile.isFlagged()) {
-                return text("P") | color(Color::Red) | bgcolor(Color::GrayLight);
+                return text(" P") | color(Color::Red) | bgcolor(Color::GrayLight);
             }
-            return text(" ") | bgcolor(Color::GrayLight);
+            return text("[]") | color(Color::GrayDark) | bgcolor(Color::GrayLight);
         }
         if (m_tile.isMine()) {
-            return text("*") | color(Color::Black) | bgcolor(Color::GrayDark);
+            return text(" *") | color(Color::Black) | bgcolor(Color::GrayDark);
         }
         const uint8_t surroundingMines = m_tile.getSurroundingMines();
         if(surroundingMines == 0) [[likely]] {
-            return text(" ") | bgcolor(Color::GrayDark);
+            return text("  ") | bgcolor(Color::GrayDark);
         }
-        Element tileRepr{text(std::to_string(surroundingMines)) | bgcolor(Color::GrayDark)};
+        Element tileRepr{text(std::format(" {}", surroundingMines)) | bgcolor(Color::GrayDark)};
         switch (surroundingMines) {
             [[likely]] case 1:
-                tileRepr |= color(Color::Blue);
+                tileRepr |= color(Color::BlueLight);
                 break;
             [[likely]] case 2:
                 tileRepr |= color(Color::Green);
                 break;
             [[likely]] case 3:
-                tileRepr |= color(Color::Red);
+                tileRepr |= color(Color::RedLight);
                 break;
             case 4:
-                tileRepr |= color(Color::DarkBlue);
+                tileRepr |= color(Color::Blue);
                 break;
             case 5:
-                tileRepr |= color(Color::DarkRed);
+                tileRepr |= color(Color::Red);
                 break;
             case 6:
                 tileRepr |= color(Color::Cyan);

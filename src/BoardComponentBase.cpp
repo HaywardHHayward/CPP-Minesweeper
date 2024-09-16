@@ -30,7 +30,6 @@ namespace Minesweeper {
             renderElements.push_back(std::move(rowOfElements));
         }
         ftxui::Table table(std::move(renderElements));
-        table.SelectAll().SeparatorVertical(ftxui::EMPTY);
         return table.Render();
     }
 

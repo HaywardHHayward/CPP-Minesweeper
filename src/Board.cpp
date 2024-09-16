@@ -3,10 +3,6 @@
 #include <algorithm>
 #include <BS_thread_pool.hpp> // https://github.com/bshoshany/thread-pool
 #include <cassert>
-#ifdef __cpp_lib_parallel_algorithm
-#define PARALLEL_ALGORITHM
-#include <execution>
-#endif
 #ifndef _MSC_VER
 #define PCG_RAND
 #include <pcg/pcg_extras.hpp>
@@ -178,7 +174,7 @@ namespace Minesweeper {
             auto contains = [](auto& range, auto value) {
                 return std::ranges::find(range, value) != std::ranges::end(range);
             };
-            std::erase_if(possibleTiles, [&surroundingTiles, contains](Tile* tile) {
+            std::erase_if(possibleTiles, [&](Tile* tile) {
                 return contains(surroundingTiles, tile);
             });
         }

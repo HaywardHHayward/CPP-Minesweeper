@@ -39,7 +39,7 @@ int main(const int argc, const char* const argv[]) {
                 const tui::Component difficultyMenu = tui::Menu(&difficultyEntries, &difficultySelection,
                                                                 {.on_enter{screen.ExitLoopClosure()}});
 
-                const tui::Component difficultyRender = Renderer(difficultyMenu, [&difficultyMenu] {
+                const tui::Component difficultyRender = Renderer(difficultyMenu, [&] {
                     return tui::vbox({
                                tui::text("Choose your difficulty"),
                                tui::separator(),
@@ -75,20 +75,20 @@ int main(const int argc, const char* const argv[]) {
 
             const BoardComponent baseBoard{BoardComponentBase::Create(board, screen.ExitLoopClosure())};
             const tui::Component boardComponent{Hoverable(baseBoard, &baseBoard->hovered)};
-            const tui::Component boardRenderer = Renderer(boardComponent, [&boardComponent] {
+            const tui::Component boardRenderer = Renderer(boardComponent, [&] {
                 return boardComponent->Render() | tui::border;
             });
 
-            tui::Component countRenderer = tui::Renderer([&board] {
+            tui::Component countRenderer = tui::Renderer([&] {
                 return tui::text(std::format("Remaining mines: {:{}}", board->getRemainingMines(),
                                              std::to_string(board->getMineCount()).length()));
             });
 
             using steadyClock = std::chrono::steady_clock;
             const steadyClock::time_point startTime{steadyClock::now()};
-            auto timeRenderer = [&startTime](
+            auto timeRenderer = [&](
                 const steadyClock::time_point endTime = steadyClock::now()) {
-                return tui::Renderer([&endTime, &startTime] {
+                return tui::Renderer([&] {
                     namespace time = std::chrono;
                     const time::duration elapsedTime{endTime - startTime};
                     const bool isMaxedOut{elapsedTime > time::minutes(99) + time::seconds(59)};
@@ -99,7 +99,7 @@ int main(const int argc, const char* const argv[]) {
                 });
             };
 
-            tui::Component infoRenderer = tui::Renderer([&countRenderer, &timeRenderer] {
+            tui::Component infoRenderer = tui::Renderer([&] {
                 return tui::hbox({
                     countRenderer->Render(),
                     tui::filler(),
@@ -109,7 +109,7 @@ int main(const int argc, const char* const argv[]) {
                 });
             });
 
-            const tui::Component gameplayRender = Renderer(boardRenderer, [&infoRenderer, &boardRenderer] {
+            const tui::Component gameplayRender = Renderer(boardRenderer, [&] {
                 return tui::vbox({
                            infoRenderer->Render() | tui::flex,
                            tui::separator(),
@@ -207,19 +207,19 @@ void customInitialization(ftxui::ScreenInteractive& screen, std::shared_ptr<Mine
         ftxui::Container::Vertical({
             Input(&rowStr, rowOption) | ftxui::CatchEvent([](const ftxui::Event& event) {
                 return event.is_character() && !std::isdigit(event.character()[0]);
-            }) | ftxui::CatchEvent([&rowStr](const ftxui::Event& event) {
+            }) | ftxui::CatchEvent([&](const ftxui::Event& event) {
                 return event.is_character() && rowStr.size() > std::numeric_limits<
                            std::uint8_t>::digits10;
             }),
             Input(&columnStr, columnOption) | ftxui::CatchEvent([](const ftxui::Event& event) {
                 return event.is_character() && !std::isdigit(event.character()[0]);
-            }) | ftxui::CatchEvent([&columnStr](const ftxui::Event& event) {
+            }) | ftxui::CatchEvent([&](const ftxui::Event& event) {
                 return event.is_character() && columnStr.size() > std::numeric_limits<
                            std::uint8_t>::digits10;
             }),
             Input(&mineStr, mineOption) | ftxui::CatchEvent([](const ftxui::Event& event) {
                 return event.is_character() && !std::isdigit(event.character()[0]);
-            }) | ftxui::CatchEvent([&mineStr](const ftxui::Event& event) {
+            }) | ftxui::CatchEvent([&](const ftxui::Event& event) {
                 return event.is_character() && mineStr.size() > std::numeric_limits<
                            std::uint16_t>::digits10;
             })
